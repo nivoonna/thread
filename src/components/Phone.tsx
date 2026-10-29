@@ -13,16 +13,31 @@ import {
   ShoppingBag,
   Star,
 } from "lucide-react";
-import type { Group, JourneyEvent, Participant } from "../data";
+import { joinedParticipants, utc } from "../replay";
+import { db, type Group, type JourneyEvent, type Participant } from "../data";
 export function Phone({
   group,
   event,
   participant,
+  moment,
 }: {
   group: Group;
   event: JourneyEvent;
   participant: Participant;
+  moment: number;
 }) {
+  const joined = joinedParticipants(group, Date.parse(event.at));
+  const ownPayment = db.payments.find(
+    (p) => p.participantId === participant.id,
+  )!;
+  const pendingPerson = db.participants.find(
+    (p) => p.id === event.pendingParticipantId,
+  );
+  const authorized =
+    ownPayment.result === "authorized" &&
+    !!ownPayment.at &&
+    Date.parse(ownPayment.at) <= Date.parse(event.at);
+  const ownShare = participant.role !== "Host" || event.screen === "pay";
   const screen = event.screen,
     isHost = participant.role === "Host",
     isRestaurant = screen === "restaurant",
@@ -39,7 +54,7 @@ export function Phone({
   return (
     <div className="phone" data-testid="phone" data-screen={screen}>
       <div className="phone-status">
-        <b>12:30</b>
+        <b>{utc(moment).slice(0, 5)}</b>
         <span className="camera" />
         <span>
           <Wifi size={13} />
@@ -139,7 +154,7 @@ export function Phone({
                   ? "Lunch, together."
                   : isCart
                     ? "A little of everything."
-                    : isPay || isFailed
+                    : ownShare
                       ? "Your part of the order."
                       : isWaiting
                         ? "Waiting on the group."
@@ -149,11 +164,11 @@ export function Phone({
               </h2>
               <div className="mobile-group">
                 <div className="mini-avatars">
-                  {["A", "S", "M"].map((n) => (
-                    <span key={n}>{n}</span>
+                  {joined.slice(0, 3).map((p) => (
+                    <span key={p.id}>{p.name[0]}</span>
                   ))}
                 </div>
-                <span>Alex’s group · {group.size} people</span>
+                <span>Alex’s group · {joined.length} joined</span>
                 <span className="mobile-tag">
                   {split ? "Split pay" : "One payer"}
                 </span>
@@ -173,14 +188,14 @@ export function Phone({
                     </div>
                   </div>
                   <div className="mobile-list-title">
-                    AT THE TABLE <span>{group.size} joined</span>
+                    AT THE TABLE <span>{joined.length} joined</span>
                   </div>
-                  {["Alex", "Sam", "Maya"].slice(0, group.size).map((n, i) => (
-                    <div className="person-row" key={n}>
-                      <span className="person-avatar">{n[0]}</span>
+                  {joined.map((p) => (
+                    <div className="person-row" key={p.id}>
+                      <span className="person-avatar">{p.name[0]}</span>
                       <span>
-                        {n}
-                        {i === 0 ? " (host)" : ""}
+                        {p.name}
+                        {p.role === "Host" ? " (host)" : ""}
                       </span>
                       <Check size={14} />
                     </div>
@@ -235,12 +250,10 @@ export function Phone({
                     />
                     <div>
                       <strong>
-                        {isPay || isFailed
-                          ? "Your sesame bowl"
-                          : "The group’s lunch"}
+                        {ownShare ? "Your sesame bowl" : "The group’s lunch"}
                       </strong>
                       <p>
-                        {isPay || isFailed
+                        {ownShare
                           ? "1 item · made just for you"
                           : `${group.size} meals · one happy table`}
                       </p>
@@ -248,11 +261,9 @@ export function Phone({
                   </div>
                   <div className="payment-summary">
                     <div>
-                      <span>
-                        {isPay || isFailed ? "Your items" : "Group subtotal"}
-                      </span>
+                      <span>{ownShare ? "Your items" : "Group subtotal"}</span>
                       <b>
-                        {isPay || isFailed
+                        {ownShare
                           ? "$14.80"
                           : `$${(group.size * 14.8).toFixed(2)}`}
                       </b>
@@ -260,20 +271,13 @@ export function Phone({
                     <div>
                       <span>Delivery & service</span>
                       <b>
-                        {isPay || isFailed
-                          ? "$2.00"
-                          : `$${(group.size * 2).toFixed(2)}`}
+                        {ownShare ? "$2.00" : `$${(group.size * 2).toFixed(2)}`}
                       </b>
                     </div>
                     <div className="total">
+                      <strong>{ownShare ? "Your total" : "Order total"}</strong>
                       <strong>
-                        {isPay || isFailed ? "Your total" : "Order total"}
-                      </strong>
-                      <strong>
-                        $
-                        {((isPay || isFailed ? 1 : group.size) * 16.8).toFixed(
-                          2,
-                        )}
+                        ${((ownShare ? 1 : group.size) * 16.8).toFixed(2)}
                       </strong>
                     </div>
                   </div>
@@ -293,13 +297,18 @@ export function Phone({
                       <Clock size={18} />
                       <div>
                         <strong>
-                          {group.outcome === "deadline_expired"
-                            ? "Still waiting for everyone"
-                            : "Sam’s payment is pending"}
+                          {pendingPerson
+                            ? `${pendingPerson.name}’s payment is pending`
+                            : authorized
+                              ? "Your share is authorized"
+                              : !split
+                                ? "Alex will place the order"
+                                : "Still waiting for everyone"}
                         </strong>
                         <p>
-                          Your group order can’t be placed until everyone is
-                          ready.
+                          {authorized && !isHost
+                            ? "Your authorization is held. The shared order is not confirmed yet."
+                            : "Your group order can’t be placed until everyone is ready."}
                         </p>
                       </div>
                     </div>
@@ -352,7 +361,8 @@ export function Phone({
                   </div>
                   <div className="mobile-bottom-note">
                     <Clock size={11} />
-                    Group closes at 12:32:30
+                    Group closes at{" "}
+                    {utc(Date.parse(group.createdAt) + 150000).slice(0, 8)}
                   </div>
                 </>
               )}

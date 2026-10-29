@@ -8,14 +8,16 @@ import {
   pct,
   SEGMENTS,
   OUTCOME_LABEL,
+  PERIOD_LABEL,
   type Filters,
   type Group,
   type Outcome,
 } from "./data";
+import { snapshot, utc } from "./replay";
 export const QUESTIONS = [
-  "Why is Group Order completion declining?",
+  "What happened in this shared order?",
   "Which customer segments are most affected?",
-  "What evidence connects checkout friction to failed transactions?",
+  "What should we validate before changing checkout?",
 ];
 export interface Evidence {
   label: string;
@@ -27,6 +29,7 @@ export interface Evidence {
 }
 export interface Finding {
   observed: string;
+  business: string;
   possible: string;
   uncertain: string;
   next: string;
@@ -38,6 +41,7 @@ export function investigate(
   filters: Filters,
   question: number,
   activeGroupId: string,
+  baseUrl = "https://nivoonna.github.io/thread/",
 ): Finding {
   const groups = selectGroups(filters),
     current = metrics(groups),
@@ -61,7 +65,7 @@ export function investigate(
     }))
     .sort((a, b) => b.count - a.count);
   const leader = causes[0];
-  const comparisons = SEGMENTS.slice(0, 5)
+  const comparisons = SEGMENTS.slice(0, 6)
     .map((s) => ({
       label: s.label,
       ...metrics(selectGroups({ ...filters, ...s.filter })),
@@ -80,6 +84,8 @@ export function investigate(
     samples.find((s) => s.groupId === activeGroupId) ||
     samples[0];
   const selected = db.groups.find((g) => g.id === preferred?.groupId);
+  const order = db.orders.find((o) => o.groupId === selected?.id);
+  const people = db.participants.filter((p) => p.groupId === selected?.id);
   const backend =
     preferred?.events.find((e) => e.label === "Authorization declined") ||
     preferred?.events.find(
@@ -100,6 +106,9 @@ export function investigate(
   if (preferred)
     evidence.push({
       label: `${preferred.id} · view replay`,
+      eventId:
+        preferred.events.find((e) => e.label === "Authorization declined")
+          ?.id || preferred.events[0].id,
       type: "session",
       sessionId: preferred.id,
       groupId: preferred.groupId,
@@ -159,6 +168,72 @@ export function investigate(
     next = "Broaden the filters or choose a different period.";
     evidence.length = 0;
   }
+  const participants = people
+    .map((p) => `${p.name} (${p.role}, ${p.id})`)
+    .join(", ");
+  const linked = selected
+    ? db.sessions.filter((s) => s.groupId === selected.id && s.detailed)
+    : [];
+  const block = linked
+    .flatMap((s) => s.events)
+    .find((e) => e.label === "Submission blocked");
+  const decline = linked
+    .flatMap((s) => s.events)
+    .find((e) => e.label === "Authorization declined");
+  const host = linked.find(
+    (s) =>
+      db.participants.find((p) => p.id === s.participantId)?.role === "Host",
+  );
+  const payer = linked.find((s) => s.events.some((e) => e.id === decline?.id));
+  const mismatch =
+    block &&
+    host &&
+    payer &&
+    snapshot(host, Date.parse(block.at)).screen?.screen === "waiting" &&
+    snapshot(host, Date.parse(block.at)).screen?.pendingParticipantId ===
+      payer.participantId &&
+    snapshot(payer, Date.parse(block.at)).screen?.screen === "failed";
+  const caseObservation = selected
+    ? `${selected.id}: ${selected.size} participants, ${selected.paymentType} payment. ${mismatch ? `At ${utc(block!.at)}, the participant’s recorded screen shows a decline while the host’s recorded screen shows pending payment. Authorization declined at ${utc(decline!.at)}; checkout was blocked at ${utc(block!.at)}.` : `Linked records show ${OUTCOME_LABEL[selected.outcome].toLowerCase()}. Review individual screens separately from business responses.`}`
+    : "No detailed replay is available for this cohort.";
+  const statuses = selected
+    ? people
+        .map((person) => {
+          const payment = db.payments.find(
+            (p) => p.participantId === person.id,
+          )!;
+          return `${person.name}: ${payment.result.replaceAll("_", " ")}${payment.at ? ` at ${utc(payment.at)}` : ""}`;
+        })
+        .join("; ")
+    : "";
+  const business = `${selected ? `${selected.id} / ${order?.id}: final status ${order?.status.replaceAll("_", " ")}. ${order?.confirmedAt ? `Confirmed ${utc(order.confirmedAt)}.` : "No order confirmation recorded."} ` : ""}Final participant payment records: ${statuses || "No detailed case selected"}. Comparable cohort: ${current.confirmed}/${current.total} confirmed (${pct(current.rate)}), ${failures.length} non-completing; ${causes.find((c) => c.outcome === "payment_failed")!.count} recorded authorization failures. ${filters.period === "recent" ? `Previous period: ${previous.confirmed}/${previous.total} (${pct(previous.rate)}).` : ""} ${new Set(samples.map((s) => s.groupId)).size} curated orders have authored replays. Failure counts do not measure messaging mismatch prevalence.`;
+  if (question === 0) observed = `${caseObservation} ${observed}`;
+  if (selected && question === 0 && !mismatch) {
+    if (selected.outcome === "confirmed") {
+      possible =
+        "This order is a successful counterexample. It does not establish why comparable orders failed.";
+      next =
+        "Compare payment authorizations, timing and participant coordination with an incomplete order before prioritizing a change.";
+    } else if (selected.outcome === "deadline_expired") {
+      possible =
+        "Coordination or insufficient time may have contributed; the records show deadline expiry without a submission, not an authorization decline.";
+      next =
+        "Validate time remaining, invitation-to-join delays and payment readiness against completed orders before testing deadline reminders.";
+    } else if (selected.outcome === "checkout_confusion") {
+      possible =
+        "Repeated visits to the payment explanation may indicate uncertainty. The recordings cannot establish intent or motivation.";
+      next =
+        "Review comparable completed sessions and validate understanding with customer research before changing the payment explanation.";
+    }
+  }
+  if (mismatch && question !== 1) {
+    possible =
+      "Inconsistent payment status may make recovery harder in this order. The observed mismatch does not establish the cause of the aggregate decline.";
+    uncertain =
+      "We do not know whether different messaging or a retry path would recover this order. Decline reasons, retry attempts, recovery rates and comparable successful cases need validation. Curated authored replays are not a representative sample; release timing and experiment assignment do not establish causation.";
+    next =
+      "Investigate issuer decline reasons, retries and recovery rates across experiment variants before changing checkout messaging or recovery behavior. Validate a recovery hypothesis with a controlled experiment; measure confirmed orders after a decline and guard against duplicate charges or orders.";
+  }
   const trace = [
     {
       label: "Read selected metric",
@@ -185,8 +260,23 @@ export function investigate(
       result: "Observations separated from hypotheses",
     },
   ];
-  const brief = `THREAD · Investigation brief\nSynthetic data · ${filterLabel(filters)} · ${filters.period} period\n\nProblem\n${observed}\n\nAffected segment\n${filterLabel(filters)} (${current.total} groups)\n\nEvidence\n${evidence.map((e) => e.label).join("\n") || "No matching records"}\n\nLeading hypothesis\n${possible}\n\nUnknowns\n${uncertain}\n\nSuggested next step\n${next}`;
-  return { observed, possible, uncertain, next, evidence, trace, brief };
+  const url = (e: Evidence) => {
+    const session = db.sessions.find((s) => s.id === e.sessionId);
+    const event =
+      session?.events.find((x) => x.id === e.eventId) || session?.events[0];
+    return `${baseUrl}#${new URLSearchParams({ page: session ? "studio" : "journey", ...filters, ...(session ? { session: session.id, moment: String(Date.parse(event!.at)), record: event!.id } : { stage: String(e.stage ?? 0), mode: e.type === "funnel" ? "abandoned" : "reached", compare: String(e.type === "comparison") }) })}`;
+  };
+  const brief = `THREAD · Investigation brief\nSynthetic data · authored Gather reconstructions · deterministic demo engine\n\nSelected order\n${selected?.id || "No curated order"}\n${participants || "No detailed participant evidence"}\n\nCohort and dates\n${filterLabel(filters)} · ${PERIOD_LABEL[filters.period]} (${current.total} groups)\nQuestion: ${QUESTIONS[question]}\n\nObserved evidence\n${observed}\n\nBusiness outcome and scope\n${business}\n\nHypothesis\n${possible}\n\nMissing evidence\n${uncertain}\n\nRecommended validation\n${next}\n\nSupporting evidence\n${evidence.map((e) => `${e.label}\n${url(e)}`).join("\n\n") || "No matching records"}`;
+  return {
+    observed,
+    business,
+    possible,
+    uncertain,
+    next,
+    evidence,
+    trace,
+    brief,
+  };
 }
 export function outcomeCounts(groups: Group[]) {
   return Object.entries(OUTCOME_LABEL).map(([key, label]) => ({

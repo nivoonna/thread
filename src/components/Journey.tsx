@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   ArrowRight,
   ArrowDown,
@@ -34,6 +33,10 @@ interface Props {
   setMode: (mode: "reached" | "abandoned") => void;
   setStage: (n: number) => void;
   onSession: (id: string) => void;
+  a: string;
+  b: string;
+  setA: (value: string) => void;
+  setB: (value: string) => void;
   compare: boolean;
   setCompare: (b: boolean) => void;
 }
@@ -45,11 +48,13 @@ export function Journey({
   setMode,
   setStage,
   onSession,
+  a,
+  b,
+  setA,
+  setB,
   compare,
   setCompare,
 }: Props) {
-  const [a, setA] = useState("large-split"),
-    [b, setB] = useState("small");
   const groups = selectGroups(filters),
     steps = funnel(groups),
     m = metrics(groups),
@@ -96,6 +101,20 @@ export function Journey({
           </select>
         </label>
       </div>
+      <div className="cohort-context">
+        <strong>Comparable cohort: {groups.length} groups</strong>
+        <span>
+          {groups.filter((g) => g.outcome === "payment_failed").length} recorded
+          authorization failures /{" "}
+          {groups.filter((g) => g.outcome !== "confirmed").length}{" "}
+          non-completing groups
+        </span>
+        <span>
+          {new Set(detailedSessions(groups).map((s) => s.groupId)).size} curated
+          orders with authored replays. A shared failure outcome does not
+          establish the same customer messaging.
+        </span>
+      </div>
       <div className="filter-bar">
         <SlidersHorizontal size={16} />
         <label>
@@ -136,11 +155,9 @@ export function Journey({
         </label>
         <button
           className="text-button reset"
-          onClick={() =>
-            setFilters({ ...DEFAULT_FILTERS, period: filters.period })
-          }
+          onClick={() => setFilters(DEFAULT_FILTERS)}
         >
-          Reset
+          Reset cohort filters
         </button>
         <button
           className={`button compact ${compare ? "selected" : ""}`}

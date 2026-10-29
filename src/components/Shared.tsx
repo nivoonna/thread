@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, ArrowRight, Check, Layers, MousePointer2 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 export function Modal({
   open,
   onClose,
@@ -16,11 +16,21 @@ export function Modal({
   children: ReactNode;
   wide?: boolean;
 }) {
+  const opener = useRef<HTMLElement | null>(null);
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="modal-overlay" />
-        <Dialog.Content className={`modal ${wide ? "wide" : ""}`}>
+        <Dialog.Content
+          className={`modal ${wide ? "wide" : ""}`}
+          onOpenAutoFocus={() => {
+            opener.current = document.activeElement as HTMLElement;
+          }}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            if (opener.current?.isConnected) opener.current.focus();
+          }}
+        >
           <div className="modal-heading">
             <div>
               <Dialog.Title>{title}</Dialog.Title>
@@ -98,6 +108,14 @@ export function Architecture({
         <br />
         <span>Connected records explain the outcome.</span>
       </div>
+      <p className="architecture-context">
+        A proposed internal capability for Grab: join clickstream and
+        transaction records in the existing data lake, then reconstruct each
+        person’s experience with design-system components. Gather is the
+        fictional example used here; its screens and linked records are authored
+        synthetic fixtures. No Grab integration, capture SDK, live LLM or
+        production security implementation is deployed.
+      </p>
       <div className="architecture-flow">
         {[
           "Product design",
@@ -120,6 +138,10 @@ export function Architecture({
             [
               "SDK & instrumentation",
               "Components emit meaningful interactions with session, participant, group and request IDs. Backend events independently record acceptance or failure. This demo reconstructs states; it does not capture real users.",
+            ],
+            [
+              "Production governance (proposed)",
+              "Reuse governed interaction and transaction sources. Apply internal access controls, masking, retention and auditability. Versioned components and state would support faithful reconstruction; these production controls and integrations are not implemented in this demo.",
             ],
             [
               "Data Mesh",

@@ -29,9 +29,11 @@ import {
 export function Overview({
   onInvestigate,
   onJourney,
+  onCompare,
 }: {
   onInvestigate: () => void;
   onJourney: () => void;
+  onCompare: () => void;
 }) {
   const recent = metrics(
       selectGroups({ ...FOCUS_FILTERS, size: "all", payment: "all" }),
@@ -45,11 +47,8 @@ export function Overview({
       }),
     ),
     focus = metrics(selectGroups(FOCUS_FILTERS)),
-    focusPrevious = metrics(
-      selectGroups({ ...FOCUS_FILTERS, period: "previous" }),
-    );
-  const delta = recent.rate - previous.rate,
-    focusDelta = focus.rate - focusPrevious.rate;
+    featured = db.groups.find((g) => g.id === "GO-1042")!;
+  const delta = recent.rate - previous.rate;
   const small = metrics(selectGroups({ ...FOCUS_FILTERS, size: "small" }));
   return (
     <div className="page overview">
@@ -115,23 +114,29 @@ export function Overview({
           <ScanLine size={24} />
         </div>
         <div className="opportunity-copy">
-          <div className="eyebrow">WORTH A CLOSER LOOK</div>
-          <h2>Larger groups. More friction at checkout.</h2>
+          <div className="eyebrow">ONE SHARED ORDER · {featured.id}</div>
+          <h2>Five people. One incomplete order.</h2>
           <p>
-            Completion for groups with 4+ participants using split payments is{" "}
-            <strong>
-              {Math.abs(focusDelta).toFixed(1)} points{" "}
-              {focusDelta < 0 ? "lower" : "higher"}
-            </strong>{" "}
-            than the previous period.
+            Follow a shared order journey. Connect what each person experienced
+            with payment and order outcomes, then decide what to investigate
+            next.
           </p>
           <div className="opportunity-meta">
-            <span>{focus.total} groups in this segment</span>
-            <span>Multiple possible causes</span>
+            <span>
+              {featured.size} participants · {featured.paymentType} payment
+            </span>
+            <span>
+              {
+                db.sessions.filter(
+                  (s) => s.groupId === featured.id && s.detailed,
+                ).length
+              }{" "}
+              authored replays · incomplete order
+            </span>
           </div>
         </div>
         <button className="button primary" onClick={onInvestigate}>
-          Investigate drop-off <ArrowRight size={16} />
+          Investigate this journey <ArrowRight size={16} />
         </button>
       </section>
       <div className="overview-grid">
@@ -259,7 +264,7 @@ export function Overview({
             <br />
             The next question is <em>why</em>.
           </div>
-          <button className="text-button" onClick={onInvestigate}>
+          <button className="text-button" onClick={onCompare}>
             Explore this comparison <ArrowUpRight size={15} />
           </button>
         </section>

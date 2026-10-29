@@ -39,6 +39,7 @@ export interface JourneyEvent {
   tap?: boolean;
   // Explicit authored screen observation; backend records alone never prove a render.
   rendered?: boolean;
+  pendingParticipantId?: string;
 }
 export interface Participant {
   id: string;
@@ -659,7 +660,15 @@ function extendCuratedFixtures(data: Dataset) {
             e.kind === "Intent" ||
             e.kind === "Interaction" ||
             e.kind === "Application";
-          const record = { ...e, rendered };
+          const pendingParticipantId =
+            i === 0 &&
+            e.screen === "waiting" &&
+            group.outcome === "payment_failed"
+              ? data.payments.find(
+                  (p) => p.groupId === group.id && p.result === "declined",
+                )?.participantId
+              : undefined;
+          const record = { ...e, rendered, pendingParticipantId };
           if (
             (e.kind === "Backend" && e.label !== "First participant joins") ||
             e.label === "Order confirmed"
@@ -667,7 +676,7 @@ function extendCuratedFixtures(data: Dataset) {
             return [
               record,
               {
-                ...e,
+                ...record,
                 id: `${e.id}-render`,
                 label: `Screen rendered: ${e.screen}`,
                 kind: "Application" as const,

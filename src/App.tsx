@@ -13,7 +13,13 @@ import { Overview } from "./components/Overview";
 import { Journey } from "./components/Journey";
 import { Studio } from "./components/Studio";
 import { Architecture, ThreadMark } from "./components/Shared";
-import { DEFAULT_FILTERS, FOCUS_FILTERS, db, type Filters } from "./data";
+import {
+  DEFAULT_FILTERS,
+  FOCUS_FILTERS,
+  db,
+  SEGMENTS,
+  type Filters,
+} from "./data";
 import type { Evidence } from "./investigator";
 type Page = "overview" | "journey" | "studio";
 interface RouteState {
@@ -21,9 +27,31 @@ interface RouteState {
   filters: Filters;
   sessionId: string;
   event: number;
+  moment: number;
+  record: string;
+  origin: string;
   stage: number;
   compare: boolean;
+  cohortA: string;
+  cohortB: string;
   mode: "reached" | "abandoned";
+}
+function legacyMoment(p: URLSearchParams) {
+  const s = db.sessions.find((s) => s.id === (p.get("session") || "S-1042-0"));
+  if (!s?.detailed) return 0;
+  const legacy: Record<string, number[]> = {
+    "S-1042-0": [0, 12, 25, 44, 70, 100, 102, 145],
+    "S-1042-1": [30, 55, 76, 96, 97, 98, 145],
+    "S-1096-0": [0, 12, 25, 44, 70, 110, 150],
+    "S-1128-0": [0, 12, 25, 44, 70, 80, 95, 108, 140],
+    "S-1186-0": [0, 12, 25, 44, 70, 100, 115, 120],
+    "S-1234-0": [0, 12, 25, 44, 70, 100, 115, 120],
+  };
+  const seconds = legacy[s.id]?.[Number(p.get("event")) || 0];
+  return seconds !== undefined
+    ? Date.parse(db.groups.find((g) => g.id === s.groupId)!.createdAt) +
+        seconds * 1000
+    : Date.parse(s.events[0].at);
 }
 function readRoute(): RouteState {
   const p = new URLSearchParams(location.hash.replace(/^#/, ""));
@@ -42,6 +70,14 @@ function readRoute(): RouteState {
     },
     sessionId: p.get("session") || "S-1042-0",
     event: Math.max(0, Number(p.get("event")) || 0),
+    moment:
+      Number.isFinite(Number(p.get("moment"))) &&
+      Number(p.get("moment")) > 0 &&
+      Number(p.get("moment")) < 8640000000000000
+        ? Number(p.get("moment"))
+        : legacyMoment(p),
+    origin: p.get("origin") || "",
+    record: p.get("record") || "",
     stage: Math.min(
       6,
       Math.max(
@@ -52,6 +88,16 @@ function readRoute(): RouteState {
       ),
     ),
     compare: p.get("compare") === "true",
+    cohortA: valid(
+      "cohortA",
+      SEGMENTS.map((s) => s.id),
+      "large-split",
+    ),
+    cohortB: valid(
+      "cohortB",
+      SEGMENTS.map((s) => s.id),
+      "small-split",
+    ),
     mode:
       p.get("stage") === "6"
         ? "reached"
@@ -60,8 +106,7 @@ function readRoute(): RouteState {
 }
 export default function App() {
   const [route, setRoute] = useState<RouteState>(readRoute),
-    [architecture, setArchitecture] = useState(false),
-    [seekVersion, setSeekVersion] = useState(0);
+    [architecture, setArchitecture] = useState(false);
   useEffect(() => {
     const fn = () => setRoute(readRoute());
     window.addEventListener("popstate", fn);
@@ -79,21 +124,78 @@ export default function App() {
       ...next.filters,
       session: next.sessionId,
       event: String(next.event),
+      moment: String(next.moment),
+      record: next.record,
+      origin: next.origin,
       stage: String(next.stage),
       compare: String(next.compare),
+      cohortA: next.cohortA,
+      cohortB: next.cohortB,
       mode: next.mode,
     });
     history[replace ? "replaceState" : "pushState"](null, "", `#${params}`);
     if (change.page && change.page !== route.page) window.scrollTo({ top: 0 });
   }
-  const onSession = (id: string, event = 0) => {
-    setSeekVersion((v) => v + 1);
-    navigate({ page: "studio", sessionId: id, event });
+  const onSession = (id: string, event = 0, moment?: number) => {
+    navigate({
+      page: "studio",
+      sessionId: id,
+      event,
+      record:
+        moment === undefined
+          ? db.sessions.find((s) => s.id === id)?.events[event]?.id || ""
+          : "",
+      moment:
+        moment ??
+        (Date.parse(
+          db.sessions.find((s) => s.id === id)?.events[event]?.at || "",
+        ) ||
+          0),
+    });
+  };
+  const remember = () =>
+    JSON.stringify({
+      sessionId: route.sessionId,
+      moment: route.moment,
+      record: route.record,
+      filters: route.filters,
+    });
+  const returnToOrigin = () => {
+    try {
+      const origin = JSON.parse(route.origin);
+      if (
+        !db.sessions.some((s) => s.id === origin.sessionId) ||
+        !origin.filters ||
+        !Number.isFinite(origin.moment) ||
+        origin.moment <= 0 ||
+        origin.moment >= 8640000000000000 ||
+        !["all", "small", "large"].includes(origin.filters.size) ||
+        !["all", "split", "single"].includes(origin.filters.payment) ||
+        !["all", "completed", "abandoned"].includes(origin.filters.outcome) ||
+        !["all", "recent", "previous"].includes(origin.filters.period)
+      )
+        throw new Error("Invalid origin");
+      navigate({
+        page: "studio",
+        sessionId: origin.sessionId,
+        moment: origin.moment,
+        record: typeof origin.record === "string" ? origin.record : "",
+        filters: origin.filters,
+      });
+    } catch {
+      navigate({ page: "studio" });
+    }
   };
   const onEvidence = (e: Evidence) => {
     if (e.type === "funnel")
-      navigate({ page: "journey", stage: e.stage ?? 5, mode: "abandoned" });
-    if (e.type === "comparison") navigate({ page: "journey", compare: true });
+      navigate({
+        page: "journey",
+        stage: e.stage ?? 5,
+        mode: "abandoned",
+        origin: remember(),
+      });
+    if (e.type === "comparison")
+      navigate({ page: "journey", compare: true, origin: remember() });
     if (e.sessionId) {
       const session = db.sessions.find((s) => s.id === e.sessionId)!;
       onSession(
@@ -159,6 +261,8 @@ export default function App() {
           ).map(({ page, label, Icon }) => (
             <button
               key={page}
+              aria-label={label}
+              title={label}
               className={route.page === page ? "active" : ""}
               onClick={() => navigate({ page })}
               aria-current={route.page === page ? "page" : undefined}
@@ -217,6 +321,7 @@ export default function App() {
             </span>
             <button
               className="icon-button"
+              title="How THREAD works"
               aria-label="How THREAD works"
               onClick={() => setArchitecture(true)}
             >
@@ -226,22 +331,40 @@ export default function App() {
           </div>
         </header>
         <main id="main-content" tabIndex={-1}>
-          {route.page === "overview" ? (
+          <div hidden={route.page !== "overview"}>
             <Overview
               onInvestigate={() =>
                 navigate({
-                  page: "journey",
+                  page: "studio",
+                  sessionId: "S-1042-0",
+                  record: "",
+                  moment: Date.parse("2026-10-22T12:31:38Z"),
                   filters: FOCUS_FILTERS,
                   stage: 5,
                   mode: "abandoned",
                   compare: false,
                 })
               }
+              onCompare={() =>
+                navigate({
+                  page: "journey",
+                  filters: FOCUS_FILTERS,
+                  compare: true,
+                  cohortA: "large-split",
+                  cohortB: "small-split",
+                })
+              }
               onJourney={() =>
                 navigate({ page: "journey", filters: DEFAULT_FILTERS })
               }
             />
-          ) : route.page === "journey" ? (
+          </div>
+          <div hidden={route.page !== "journey"}>
+            {route.origin && (
+              <button className="button return-origin" onClick={returnToOrigin}>
+                Return to originating order and moment
+              </button>
+            )}
             <Journey
               filters={route.filters}
               setFilters={(filters) => navigate({ filters }, true)}
@@ -255,20 +378,36 @@ export default function App() {
               mode={route.mode}
               setMode={(mode) => navigate({ mode }, true)}
               onSession={onSession}
+              a={route.cohortA}
+              b={route.cohortB}
+              setA={(cohortA) => navigate({ cohortA }, true)}
+              setB={(cohortB) => navigate({ cohortB }, true)}
               compare={route.compare}
               setCompare={(compare) => navigate({ compare }, true)}
             />
-          ) : (
+          </div>
+          <div hidden={route.page !== "studio"}>
             <Studio
               filters={route.filters}
               sessionId={route.sessionId}
-              initialEvent={route.event}
-              seekVersion={seekVersion}
+              moment={route.moment}
+              active={route.page === "studio"}
+              record={route.record}
+              onMoment={(moment, record = "") =>
+                navigate({ moment, record }, true)
+              }
               onSession={onSession}
-              onJourney={() => navigate({ page: "journey" })}
+              onJourney={() =>
+                navigate({
+                  page: "journey",
+                  origin: remember(),
+                  stage: 0,
+                  mode: "reached",
+                })
+              }
               onEvidence={onEvidence}
             />
-          )}
+          </div>
         </main>
         <div className="app-bottom">
           <span>

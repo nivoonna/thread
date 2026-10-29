@@ -37,6 +37,13 @@ import {
   type Finding,
   type Evidence,
 } from "../investigator";
+import {
+  snapshot,
+  journeyEnd,
+  participantStatus,
+  connectedEvidence,
+  utc,
+} from "../replay";
 import { Phone } from "./Phone";
 import { Modal, Empty } from "./Shared";
 const kindIcons = {
@@ -55,25 +62,33 @@ const time = (seconds: number) =>
 interface Props {
   filters: Filters;
   sessionId: string;
-  initialEvent: number;
-  seekVersion: number;
-  onSession: (id: string, event?: number) => void;
+  moment: number;
+  active: boolean;
+  record: string;
+  onMoment: (moment: number, record?: string) => void;
+  onSession: (id: string, event?: number, moment?: number) => void;
   onJourney: () => void;
   onEvidence: (e: Evidence) => void;
 }
 export function Studio({
   filters,
   sessionId,
-  initialEvent,
-  seekVersion,
+  moment,
+  record,
+  active,
+  onMoment,
   onSession,
   onJourney,
   onEvidence,
 }: Props) {
   const available = detailedSessions(selectGroups(filters)),
-    session = available.find((s) => s.id === sessionId) || available[0];
-  const [cursor, setCursor] = useState(0),
-    [playing, setPlaying] = useState(false),
+    session = available.find((s) => s.id === sessionId);
+  const group = session && db.groups.find((g) => g.id === session.groupId);
+  const start = group ? Date.parse(group.createdAt) : 0;
+  const playhead = moment || start;
+  const cursor = Math.max(0, (playhead - start) / 1000);
+  const setCursor = (seconds: number) => onMoment(start + seconds * 1000);
+  const [playing, setPlaying] = useState(false),
     [speed, setSpeed] = useState(8),
     [question, setQuestion] = useState(0),
     [finding, setFinding] = useState<Finding | null>(null),
@@ -81,41 +96,42 @@ export function Studio({
     [running, setRunning] = useState(false),
     [brief, setBrief] = useState(false),
     [copied, setCopied] = useState(false),
+    [linkCopied, setLinkCopied] = useState(false),
     [kind, setKind] = useState("all");
   const investigatorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    setLinkCopied(false);
+  }, [moment, sessionId]);
+  useEffect(() => {
     setPlaying(false);
-    setCursor(
-      session
-        ? Math.max(
-            0,
-            (Date.parse(
-              session.events[initialEvent]?.at || session.events[0].at,
-            ) -
-              Date.parse(session.events[0].at)) /
-              1000,
-          )
-        : 0,
-    );
-  }, [session?.id, initialEvent, seekVersion]);
+  }, [session?.id, active]);
+  useEffect(() => {
+    setKind("all");
+  }, [session?.id]);
+  useEffect(() => {
+    if (!active) setBrief(false);
+  }, [active]);
   useEffect(() => {
     setFinding(null);
+    setBrief(false);
     setRunning(false);
     setProgress(0);
-  }, [filters.size, filters.payment, filters.outcome, filters.period]);
-  const duration = session
-    ? (Date.parse(session.events.at(-1)!.at) -
-        Date.parse(session.events[0].at)) /
-      1000
-    : 0;
+  }, [
+    filters.size,
+    filters.payment,
+    filters.outcome,
+    filters.period,
+    group?.id,
+  ]);
+  const duration = group ? (journeyEnd(group) - start) / 1000 : 0;
   useEffect(() => {
-    if (!playing) return;
-    const id = setInterval(
-      () => setCursor((t) => Math.min(t + speed * 0.25, duration)),
+    if (!playing || !active) return;
+    const id = setTimeout(
+      () => setCursor(Math.min(cursor + speed * 0.25, duration)),
       250,
     );
-    return () => clearInterval(id);
-  }, [playing, speed, duration]);
+    return () => clearTimeout(id);
+  }, [playing, active, speed, duration, cursor]);
   useEffect(() => {
     if (cursor >= duration) setPlaying(false);
   }, [cursor, duration]);
@@ -127,7 +143,7 @@ export function Studio({
   useEffect(() => {
     if (progress === 6) setRunning(false);
   }, [progress]);
-  if (!session)
+  if (!session || !group)
     return (
       <div className="page">
         <button className="text-button" onClick={onJourney}>
@@ -135,38 +151,54 @@ export function Studio({
           Back to journey
         </button>
         <Empty title="No detailed replay matches this cohort">
-          Six carefully reconstructed sessions are available in the current
-          period. Change the filters in Journey Analysis to explore them.
+          Authored reconstructions cover five curated groups in the recent
+          period. This group or selection has no matching recording; aggregate
+          records do not imply replay availability. Change the filters in
+          Journey Analysis to explore the curated subset.
         </Empty>
       </div>
     );
-  const group = db.groups.find((g) => g.id === session.groupId)!,
-    participant = db.participants.find((p) => p.id === session.participantId)!,
+  const participant = db.participants.find(
+      (p) => p.id === session.participantId,
+    )!,
     order = db.orders.find((o) => o.id === group.orderId)!,
     payments = db.payments.filter((p) => p.groupId === group.id),
-    related = db.sessions.filter((s) => s.groupId === group.id && s.detailed);
-  const elapsed = (e: JourneyEvent) =>
-    (Date.parse(e.at) - Date.parse(session.events[0].at)) / 1000;
-  const index = Math.max(
-      0,
-      session.events.reduce(
-        (last, e, i) => (elapsed(e) <= cursor ? i : last),
-        0,
-      ),
-    ),
-    event = session.events[index];
+    related = db.sessions.filter((s) => s.groupId === group.id);
+  const elapsed = (e: JourneyEvent) => (Date.parse(e.at) - start) / 1000;
+  const state = snapshot(session, playhead);
+  const selectedIndex = session.events.findIndex(
+    (e) => e.id === record && Date.parse(e.at) === playhead,
+  );
+  const index = selectedIndex >= 0 ? selectedIndex : state.index;
+  const event = session.events[index],
+    screen = state.screen;
+  const records = connectedEvidence(group);
+  const payment = payments.find((p) => p.participantId === participant.id)!;
   const jump = (n: number) => {
     setPlaying(false);
-    setCursor(
-      elapsed(
-        session.events[Math.max(0, Math.min(n, session.events.length - 1))],
-      ),
-    );
+    const e =
+      session.events[Math.max(0, Math.min(n, session.events.length - 1))];
+    onMoment(Date.parse(e.at), e.id);
   };
   const run = () => {
-    setFinding(investigate(filters, question, group.id));
+    setFinding(
+      investigate(
+        filters,
+        question,
+        group.id,
+        location.origin + location.pathname,
+      ),
+    );
     setProgress(0);
     setRunning(true);
+  };
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      setLinkCopied(true);
+    } catch {
+      setLinkCopied(false);
+    }
   };
   const copy = async () => {
     try {
@@ -180,28 +212,34 @@ export function Studio({
       textarea?.select();
     }
   };
-  const backendVisible = session.events
-    .slice(0, index + 1)
-    .filter((e) => e.kind === "Backend" || e.kind === "Outcome")
-    .at(-1);
+  const backendVisible = records
+    .filter(
+      (r) =>
+        Date.parse(r.event.at) <= playhead &&
+        (r.event.kind === "Backend" || r.event.kind === "Outcome"),
+    )
+    .at(-1)?.event;
   return (
     <div className="studio-page">
       <div className="studio-title">
         <div>
           <button className="back-link" onClick={onJourney}>
             <ArrowLeft size={13} />
-            Journey Analysis
+            Explore comparable journeys
           </button>
           <h1>
             Investigation Studio<span className="title-dot">.</span>
           </h1>
         </div>
         <div className="studio-actions">
+          <button className="text-button" onClick={copyLink}>
+            {linkCopied ? "Replay link copied" : "Copy replay link"}
+          </button>
           <span
             className={`outcome ${group.outcome === "confirmed" ? "success" : "warning"}`}
           >
             <i />
-            {OUTCOME_LABEL[group.outcome]}
+            Final group outcome · {OUTCOME_LABEL[group.outcome]}
           </span>
           <button
             className="button"
@@ -212,7 +250,7 @@ export function Studio({
             }}
           >
             <FileText size={15} />
-            Generate brief
+            Create investigation brief
           </button>
         </div>
       </div>
@@ -223,7 +261,8 @@ export function Studio({
         </span>
         <span>{PERIOD_LABEL[filters.period]}</span>
         <span className="context-count">
-          {selectGroups(filters).length} groups in cohort
+          {selectGroups(filters).length} comparable groups · {group.id} is the
+          parent investigation
         </span>
       </div>
       <div className="studio-workspace">
@@ -257,14 +296,18 @@ export function Studio({
               return (
                 <button
                   key={s.id}
-                  onClick={() => onSession(s.id)}
+                  onClick={() => onSession(s.id, 0, playhead)}
                   className={session.id === s.id ? "active" : ""}
                   aria-pressed={session.id === s.id}
                 >
                   <span className="person-avatar">{p.name[0]}</span>
                   <span>
                     <strong>{p.name}</strong>
-                    <small>{p.role}</small>
+                    <small>
+                      {p.role} ·{" "}
+                      {s.detailed ? "Replay available" : "Replay unavailable"}
+                    </small>
+                    <small>{participantStatus(s, playhead)}</small>
                   </span>
                   {session.id === s.id && <span className="status-dot" />}
                 </button>
@@ -287,9 +330,15 @@ export function Studio({
               </select>
             </label>
           </div>
+          {kind !== "all" && (
+            <p className="timeline-filter-note">
+              Showing {kind} events plus the selected event. Playback still
+              follows all events.
+            </p>
+          )}
           <div className="event-list">
             {session.events.map((e, i) => {
-              if (kind !== "all" && e.kind !== kind) return null;
+              if (kind !== "all" && e.kind !== kind && index !== i) return null;
               const Icon = kindIcons[e.kind];
               return (
                 <button
@@ -304,7 +353,7 @@ export function Studio({
                   <span className="event-content">
                     <span className="event-kind">
                       {e.kind}
-                      <time>{time(elapsed(e))}</time>
+                      <time>{utc(e.at)}</time>
                     </span>
                     <strong>{e.label}</strong>
                   </span>
@@ -318,31 +367,15 @@ export function Studio({
               {group.size} participants share one group.
               <br />
               {related.length > 1
-                ? "Switch sessions to see the other side."
+                ? "Switch people at the same journey moment."
                 : "This group has one detailed replay."}
             </p>
           </div>
         </aside>
         <section className="replay-panel">
           <div className="workspace-panel-title">
-            <span>Session reconstruction</span>
+            <span>Reconstructed customer screen</span>
             <span className="tiny-label">GATHER · iOS</span>
-          </div>
-          <div className="replay-stage">
-            <div className="replay-meta">
-              <span>
-                <span className="status-dot" />
-                {participant.name} · {participant.role}
-              </span>
-              <span>Reconstructed UI</span>
-            </div>
-            <Phone group={group} event={event} participant={participant} />
-            <div className="replay-caption">
-              <span className={`kind-label kind-${event.kind}`}>
-                {event.kind}
-              </span>
-              <span>{event.label}</span>
-            </div>
           </div>
           <div className="player">
             <div className="scrub-marks">
@@ -374,14 +407,16 @@ export function Studio({
             <div className="player-controls">
               <button
                 className="icon-button"
+                title="Previous event"
                 aria-label="Previous event"
-                disabled={index === 0}
+                disabled={index <= 0}
                 onClick={() => jump(index - 1)}
               >
                 <SkipBack size={16} />
               </button>
               <button
                 className="play-button"
+                title={playing ? "Pause replay" : "Play replay"}
                 aria-label={playing ? "Pause replay" : "Play replay"}
                 onClick={() => {
                   if (cursor >= duration) setCursor(0);
@@ -392,6 +427,7 @@ export function Studio({
               </button>
               <button
                 className="icon-button"
+                title="Next event"
                 aria-label="Next event"
                 disabled={index === session.events.length - 1}
                 onClick={() => jump(index + 1)}
@@ -412,18 +448,62 @@ export function Studio({
               </select>
             </div>
           </div>
+          <div className="replay-stage">
+            <div className="replay-meta">
+              <span>
+                <span className="status-dot" />
+                {participant.name} · {participant.role}
+              </span>
+              <span>Authored synthetic fixture</span>
+            </div>
+            <div className="reconstruction-time" data-testid="journey-clock">
+              Journey time · {utc(playhead)}
+            </div>
+            {screen ? (
+              <Phone
+                group={group}
+                event={screen}
+                participant={participant}
+                moment={playhead}
+              />
+            ) : (
+              <Empty title={state.boundary}>
+                Choose a later journey moment to inspect this person’s screen.
+              </Empty>
+            )}
+            <div className="reconstruction-note">
+              {state.boundary}
+              {screen && <> Recorded at {utc(screen.at)}.</>}
+            </div>
+            <details className="reconstruction-details">
+              <summary>Reconstruction details</summary>
+              <p>
+                {group.release} · authored Gather screen:{" "}
+                {screen?.screen || "unavailable"}. No captured recording or
+                component-version metadata.
+              </p>
+            </details>
+            <div className="replay-caption">
+              <span
+                className={`kind-label kind-${event?.kind || "Application"}`}
+              >
+                {event?.kind}
+              </span>
+              <span>{event?.label || "No event at this time"}</span>
+            </div>
+          </div>
           <div className="event-detail">
             <div className="eyebrow">
               SELECTED EVENT{" "}
               <span>
-                {new Date(event.at).toLocaleTimeString("en-GB", {
+                {new Date(event?.at || playhead).toLocaleTimeString("en-GB", {
                   timeZone: "UTC",
                 })}{" "}
                 UTC
               </span>
             </div>
-            <p>{event.detail}</p>
-            <code>{event.id}</code>
+            <p>{event?.detail || state.boundary}</p>
+            <code>{event?.id || session.id}</code>
           </div>
         </section>
         <aside className="context-panel">
@@ -449,7 +529,7 @@ export function Studio({
               >
                 {order.status.replace("_", " ")}
               </dd>
-              <dt>Payment outcome</dt>
+              <dt>Final group payments</dt>
               <dd>
                 {payments.some((p) => p.result === "declined")
                   ? "1 authorization declined"
@@ -457,6 +537,14 @@ export function Studio({
                     ? `${payments.filter((p) => p.result === "authorized").length} authorized`
                     : "Not attempted"}
               </dd>
+              <dt>Selected person</dt>
+              <dd>
+                {participant.name} · {participant.role}
+              </dd>
+              <dt>Person at playhead</dt>
+              <dd>{participantStatus(session, playhead)}</dd>
+              <dt>Payment record</dt>
+              <dd>{payment.id}</dd>
               <dt>Experiment</dt>
               <dd>{group.variant}</dd>
               <dt>Release</dt>
@@ -480,6 +568,59 @@ export function Studio({
               </p>
             </details>
           </div>
+          <details className="connected-evidence">
+            <summary>Connected evidence · {participant.name}</summary>
+            <p>
+              Authored synthetic records linked by group, session and
+              participant IDs. Future events are marked; rendered screens are
+              separate application records.
+            </p>
+            {records
+              .filter(
+                (r) =>
+                  r.session.id === session.id ||
+                  r.event.label === "Submission blocked" ||
+                  r.event.label === "Tap Place order",
+              )
+              .map((r) => (
+                <button
+                  key={r.event.id}
+                  className="evidence-record"
+                  onClick={() =>
+                    onSession(
+                      r.session.id,
+                      r.session.events.findIndex((e) => e.id === r.event.id),
+                    )
+                  }
+                >
+                  <strong>{r.event.label}</strong>
+                  <span>
+                    {r.source} · {r.event.kind} · {utc(r.event.at)}
+                    {Date.parse(r.event.at) > playhead
+                      ? " · after playhead"
+                      : ""}
+                  </span>
+                  <code>
+                    {r.event.id}
+                    <br />
+                    {r.participant.id} · {r.session.id}
+                    <br />
+                    {group.id} → {order.id}
+                    {r.source === "payment" ||
+                    /authorization/.test(r.event.label)
+                      ? ` → ${r.payment.id}`
+                      : ""}
+                  </code>
+                </button>
+              ))}
+            <p>
+              Final outcome:{" "}
+              {order.confirmedAt
+                ? `confirmed at ${utc(order.confirmedAt)}`
+                : "No order confirmation recorded"}
+              . Absence is a final-record observation, not a screen event.
+            </p>
+          </details>
           <div className="investigator" ref={investigatorRef}>
             <div className="investigator-title">
               <span className="investigator-symbol">
@@ -487,7 +628,7 @@ export function Studio({
               </span>
               <div>
                 <h2>Evidence Investigator</h2>
-                <span>Grounded in this cohort</span>
+                <span>This order + comparable cohort</span>
               </div>
               <span className="demo-label">DEMO</span>
             </div>
@@ -525,7 +666,7 @@ export function Studio({
                 ? "Examining evidence…"
                 : finding
                   ? "Run investigation again"
-                  : "Investigate this cohort"}
+                  : "Investigate this journey"}
               <ArrowRight size={14} />
             </button>
             {finding && (
@@ -551,9 +692,13 @@ export function Studio({
                     <div className="finding">
                       <h3>
                         <span className="status-dot" />
-                        Observed
+                        Observed evidence
                       </h3>
                       <p>{finding.observed}</p>
+                    </div>
+                    <div className="finding">
+                      <h3>Business outcome and scope</h3>
+                      <p>{finding.business}</p>
                     </div>
                     <div className="evidence-links">
                       {finding.evidence.map((e, i) => (
@@ -565,15 +710,15 @@ export function Studio({
                       ))}
                     </div>
                     <div className="finding">
-                      <h3>Possible explanation</h3>
+                      <h3>Hypothesis</h3>
                       <p>{finding.possible}</p>
                     </div>
                     <div className="finding uncertain">
-                      <h3>Uncertain</h3>
+                      <h3>Missing evidence</h3>
                       <p>{finding.uncertain}</p>
                     </div>
                     <div className="finding">
-                      <h3>Next step</h3>
+                      <h3>Recommended validation</h3>
                       <p>{finding.next}</p>
                     </div>
                     <button
@@ -584,7 +729,7 @@ export function Studio({
                       }}
                     >
                       <FileText size={14} />
-                      Generate brief
+                      Create investigation brief
                     </button>
                   </div>
                 )}
