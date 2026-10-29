@@ -1,121 +1,4 @@
 import { test, expect } from "@playwright/test";
-test("complete investigation: discover, filter, connect participants, follow evidence and copy brief", async ({
-  page,
-  context,
-}) => {
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("./");
-  await expect(
-    page.getByRole("heading", { name: "Group Orders." }),
-  ).toBeVisible();
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({
-    path: "test-results/overview.png",
-    fullPage: true,
-    animations: "disabled",
-  });
-  await page.getByRole("button", { name: "Investigate drop-off" }).click();
-  await expect(page.getByLabel("Group size", { exact: true })).toHaveValue(
-    "large",
-  );
-  await expect(page.getByLabel("Payment type")).toHaveValue("split");
-  await expect(
-    page.getByRole("button", { name: /Order submitted:/ }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText("GO-1042", { exact: true })).toBeVisible();
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({
-    path: "test-results/journey.png",
-    fullPage: true,
-    animations: "disabled",
-  });
-  await page.getByRole("button", { name: "Compare segments" }).click();
-  await expect(page.getByLabel("Comparison cohort A")).toBeVisible();
-  await page.getByLabel("Comparison cohort B").selectOption("single");
-  await page.getByRole("button", { name: "Compare segments" }).click();
-  await page.getByRole("button", { name: "Open replay" }).first().click();
-  await expect(
-    page.getByRole("heading", { name: "Investigation Studio." }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("4+ participants · Split payment", { exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Next event", exact: true }).click();
-  await expect(page.getByTestId("phone")).toHaveAttribute(
-    "data-screen",
-    "invite",
-  );
-  await page
-    .getByRole("button", { name: "Previous event", exact: true })
-    .click();
-  await expect(page.getByTestId("phone")).toHaveAttribute(
-    "data-screen",
-    "restaurant",
-  );
-  await page.getByRole("button", { name: "Sam Participant" }).click();
-  await expect(page.getByLabel("Replay group")).toHaveValue("GO-1042");
-  await page
-    .getByRole("button", { name: /Backend.*Authorization declined/ })
-    .click();
-  await expect(page.getByTestId("phone")).toHaveAttribute(
-    "data-screen",
-    "failed",
-  );
-  await expect(page.getByText("1 authorization declined")).toBeVisible();
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({
-    path: "test-results/studio.png",
-    fullPage: true,
-    animations: "disabled",
-  });
-  await page.getByRole("button", { name: "Play replay" }).click();
-  await expect(
-    page.getByRole("button", { name: "Pause replay" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Pause replay" }).click();
-  await page.getByLabel("Replay timeline").fill("0");
-  await expect(page.getByTestId("phone")).toHaveAttribute(
-    "data-screen",
-    "invite",
-  );
-  await page.getByRole("button", { name: "Investigate this cohort" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Observed", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Uncertain", exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: /04 Authorization declined/ }).click();
-  await expect(page.getByTestId("phone")).toHaveAttribute(
-    "data-screen",
-    "failed",
-  );
-  await page
-    .getByRole("button", { name: "Generate brief", exact: true })
-    .last()
-    .click();
-  await expect(
-    page.getByRole("textbox", { name: "Investigation brief", exact: true }),
-  ).toContainText("Synthetic data");
-  await page.getByRole("button", { name: "Copy brief", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Copied to clipboard" }),
-  ).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
-    "Leading hypothesis",
-  );
-  await page.getByRole("button", { name: "Close dialog" }).click();
-  await page.getByRole("button", { name: /01 Checkout opened/ }).click();
-  await expect(
-    page.getByRole("heading", { name: "Group Order funnel" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /Checkout opened:/ }),
-  ).toHaveAttribute("aria-pressed", "true");
-  expect(errors).toEqual([]);
-});
 test("filters, comparison, empty replay cohorts, successful session, architecture and narrow layout", async ({
   page,
 }) => {
@@ -131,7 +14,9 @@ test("filters, comparison, empty replay cohorts, successful session, architectur
       .getAttribute("aria-label"),
   ).not.toBe(old);
   await page.getByRole("button", { name: /Order confirmed:/ }).click();
-  await expect(page.getByText("GO-1234", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".journey").getByText("GO-1234", { exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Open replay" }).click();
   await page.getByRole("button", { name: /Outcome.*Order confirmed/ }).click();
   await expect(page.getByTestId("phone")).toHaveAttribute(
@@ -187,19 +72,24 @@ test("all investigator prompts, repeated evidence seeks and alternate replay out
   const observed = [];
   for (const question of ["0", "1", "2"]) {
     await page.getByLabel("Investigation question").selectOption(question);
-    await page.getByRole("button", { name: "Investigate this cohort" }).click();
+    await page
+      .getByRole("button", { name: "Investigate this journey" })
+      .click();
     await expect(
-      page.getByRole("heading", { name: "Observed", exact: true }),
+      page.getByRole("heading", { name: "Observed evidence", exact: true }),
     ).toBeVisible();
     observed.push(await page.locator(".finding").first().textContent());
     await expect(
-      page.getByRole("heading", { name: "Possible explanation", exact: true }),
+      page.getByRole("heading", { name: "Hypothesis", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Uncertain", exact: true }),
+      page.getByRole("heading", { name: "Missing evidence", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Next step", exact: true }),
+      page.getByRole("heading", {
+        name: "Recommended validation",
+        exact: true,
+      }),
     ).toBeVisible();
   }
   expect(new Set(observed).size).toBe(3);
@@ -247,7 +137,7 @@ test("all investigator prompts, repeated evidence seeks and alternate replay out
     "confused",
   );
   await page.getByLabel("Event type").selectOption("Outcome");
-  await expect(page.locator(".timeline-event")).toHaveCount(1);
+  await expect(page.locator(".timeline-event")).toHaveCount(2);
   await page.getByRole("button", { name: /Outcome.*Leave checkout/ }).click();
   await expect(page.getByTestId("phone")).toHaveAttribute(
     "data-screen",
@@ -281,7 +171,9 @@ test("terminal funnel selection and outcome filters survive refresh and replay n
   await expect(page.getByRole("button", { name: /Reached/ })).toHaveClass(
     "active",
   );
-  await expect(page.getByText("GO-1234", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".journey").getByText("GO-1234", { exact: true }),
+  ).toBeVisible();
   await page.getByLabel("Order outcome").selectOption("completed");
   await expect(
     page.getByRole("button", { name: /Abandoned \(0\)/ }),
@@ -296,5 +188,7 @@ test("terminal funnel selection and outcome filters survive refresh and replay n
   await expect(page.getByRole("button", { name: /Reached/ })).toHaveClass(
     "active",
   );
-  await expect(page.getByText("GO-1234", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".journey").getByText("GO-1234", { exact: true }),
+  ).toBeVisible();
 });

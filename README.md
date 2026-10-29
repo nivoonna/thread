@@ -16,9 +16,9 @@ Help product managers decide where to focus, which problems to prioritize, and w
 
 **What to explore**
 
-- Identify affected cohorts and funnel drop-offs.
-- Connect a host’s experience with a participant’s payment failure.
-- Follow supporting evidence and generate an actionable investigation brief.
+- Open GO-1042 and inspect every participant at a shared time.
+- Connect customer screens to payment and order records.
+- Explore comparable journeys, return to the case, and copy an evidence-linked brief.
 
 **Built with**
 
@@ -42,4 +42,4 @@ npm run test:e2e
 
 [Explore the live demo](https://nivoonna.github.io/thread/)
 
-All 1,500 groups are synthetic and reproducible. Six sessions use deterministic UI reconstruction. The investigator runs local analysis, not a live LLM.
+All 1,500 groups are synthetic and reproducible. Twenty-three sessions cover every member of five curated orders using authored UI reconstruction. The investigator runs local analysis, not a live LLM.
