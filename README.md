@@ -40,6 +40,6 @@ npm run test:e2e
 
 **Demo**
 
-Deployment target: https://nivoonna.github.io/thread/ — publication pending verification.
+[Explore the live demo](https://nivoonna.github.io/thread/)
 
 All 1,500 groups are synthetic and reproducible. Six sessions use deterministic UI reconstruction. The investigator runs local analysis, not a live LLM.
