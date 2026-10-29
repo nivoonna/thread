@@ -16,7 +16,7 @@ Help product managers decide where to focus, which problems to prioritize, and w
 
 **What to explore**
 
-- Open GO-1042 and inspect every participant at a shared time.
+- Open customer (GO-1042) and inspect every participant at a shared time.
 - Connect customer screens to payment and order records.
 - Explore comparable journeys, return to the case, and copy an evidence-linked brief.
 
