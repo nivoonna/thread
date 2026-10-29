@@ -4,7 +4,7 @@ export const STAGES = [
   "Participant joined",
   "Items added",
   "Checkout opened",
-  "Order submitted",
+  "Submission attempted",
   "Order confirmed",
 ] as const;
 export type PaymentType = "split" | "single";
@@ -37,6 +37,8 @@ export interface JourneyEvent {
   screen: Screen;
   detail: string;
   tap?: boolean;
+  // Explicit authored screen observation; backend records alone never prove a render.
+  rendered?: boolean;
 }
 export interface Participant {
   id: string;
@@ -108,7 +110,7 @@ export const OUTCOME_LABEL: Record<Outcome, string> = {
   confirmed: "Order confirmed",
   payment_failed: "Authorization failed",
   deadline_expired: "Deadline expired",
-  checkout_confusion: "Checkout hesitation",
+  checkout_confusion: "Repeated checkout interactions",
   left_early: "Left before checkout",
 };
 const names = ["Alex", "Sam", "Maya", "Leo", "Jo", "Rae"];
@@ -211,7 +213,7 @@ export function generateData(seed = 42819): Dataset {
         screen: stageScreens[stage],
         detail:
           stage === 5
-            ? "Checkout submission received; confirmation is a separate backend event."
+            ? "Checkout attempt recorded; backend acceptance and confirmation are separate events."
             : stage === 6
               ? "orders.confirmed — all required payments authorized."
               : `${label} recorded for ${id}.`,
@@ -400,7 +402,7 @@ export function generateData(seed = 42819): Dataset {
             "Reopen payment explanation",
             "Interaction",
             "confused",
-            "Repeated visit suggests hesitation; motivation is unknown.",
+            "Payment explanation reopened; motivation is unknown.",
             true,
           ),
           ev(
@@ -497,7 +499,190 @@ export function generateData(seed = 42819): Dataset {
       }
     }
   }
+  extendCuratedFixtures(data);
   return data;
+}
+function extendCuratedFixtures(data: Dataset) {
+  for (const group of data.groups.filter((g) =>
+    g.sessionIds.some((id) => data.sessions.find((s) => s.id === id)?.detailed),
+  )) {
+    const sessions = data.sessions.filter((s) => s.groupId === group.id);
+    const host = sessions[0];
+    // Membership is observed progressively, independently of recording start times.
+    const joined = host.events.find((e) => e.label === "Participants join")!;
+    joined.label = "First participant joins";
+    joined.detail =
+      "Maya joins at 12:30:25; Sam at 12:30:30, Leo at 12:30:34 and Jo at 12:30:40 where present.";
+    for (const [i, session] of sessions.entries()) {
+      const ev = (
+        second: number,
+        label: string,
+        kind: EventKind,
+        screen: Screen,
+        detail: string,
+        tap = false,
+      ): JourneyEvent => ({
+        id: `${session.id}-e${second}`,
+        at: at(group.createdAt, second),
+        label,
+        kind,
+        screen,
+        detail,
+        tap,
+      });
+      const payment = data.payments.find(
+        (p) => p.participantId === session.participantId,
+      )!;
+      if (group.id === "GO-1042" && [0, 2, 3].includes(i)) {
+        payment.result = "authorized";
+        payment.at = at(group.createdAt, 90 + i);
+      }
+      if (!session.detailed) {
+        const start = [0, 30, 25, 34, 40][i];
+        session.detailed = true;
+        session.events = [
+          ev(
+            start,
+            "Join Alex’s order",
+            "Intent",
+            "invite",
+            "Participant joins this shared group.",
+          ),
+          ev(
+            50 + i * 2,
+            "Add lunch to cart",
+            "Interaction",
+            "cart",
+            "cart.items_added — one sesame bowl persisted for this participant.",
+            true,
+          ),
+          ev(
+            76 + i,
+            group.paymentType === "split"
+              ? "Review your share"
+              : "Review host-paid order",
+            "Interaction",
+            group.paymentType === "split" ? "pay" : "waiting",
+            group.paymentType === "split"
+              ? "Participant reviews their $16.80 share."
+              : "Host pays; no participant authorization is required.",
+          ),
+        ];
+        if (payment.result === "authorized") {
+          const second =
+            (Date.parse(payment.at!) - Date.parse(group.createdAt)) / 1000;
+          session.events.push(
+            ev(
+              second - 2,
+              "Tap Pay my share",
+              "Interaction",
+              "pay",
+              "Payment intent; not an authorization.",
+              true,
+            ),
+            ev(
+              second - 1,
+              "Request authorization",
+              "Application",
+              "loading",
+              "payments.authorize requested for this participant.",
+            ),
+            ev(
+              second,
+              "Payment authorized",
+              "Backend",
+              "waiting",
+              "payments.authorized — authorization held, not an order confirmation.",
+            ),
+          );
+        }
+        if (group.outcome === "confirmed")
+          session.events.push(
+            ev(
+              120,
+              "Order confirmed",
+              "Outcome",
+              "success",
+              `orders.confirmed — ${group.orderId}.`,
+            ),
+          );
+        else if (group.outcome === "deadline_expired")
+          session.events.push(
+            ev(
+              150,
+              "Group deadline expires",
+              "Backend",
+              "expired",
+              "group.deadline_expired — no order submitted.",
+            ),
+          );
+        else
+          session.events.push(
+            ev(
+              group.outcome === "checkout_confusion" ? 130 : 135,
+              "Session ended",
+              "Outcome",
+              "waiting",
+              "Recording ends while waiting for the shared order. No confirmation recorded.",
+            ),
+          );
+      } else if (group.id === "GO-1042" && i === 0) {
+        host.events.push(
+          ev(
+            88,
+            "Tap Pay my share",
+            "Interaction",
+            "pay",
+            "Host authorizes their own share before placing the shared order.",
+            true,
+          ),
+          ev(
+            89,
+            "Request authorization",
+            "Application",
+            "loading",
+            "payments.authorize requested for the host.",
+          ),
+          ev(
+            90,
+            "Payment authorized",
+            "Backend",
+            "checkout",
+            "Host share authorized; other participants remain independent.",
+          ),
+        );
+      }
+      // Keep original record times and IDs. Record rendered screens separately.
+      session.events = session.events
+        .flatMap((e) => {
+          const rendered =
+            e.kind === "Intent" ||
+            e.kind === "Interaction" ||
+            e.kind === "Application";
+          const record = { ...e, rendered };
+          if (
+            (e.kind === "Backend" && e.label !== "First participant joins") ||
+            e.label === "Order confirmed"
+          ) {
+            return [
+              record,
+              {
+                ...e,
+                id: `${e.id}-render`,
+                label: `Screen rendered: ${e.screen}`,
+                kind: "Application" as const,
+                detail: `Authored Gather reconstruction records the ${e.screen} screen separately from the business response.`,
+                rendered: true,
+                tap: false,
+              },
+            ];
+          }
+          if (e.label === "Session ended") return [record];
+          return [record];
+        })
+        .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+    }
+  }
 }
 export const db = generateData();
 export function selectGroups(filters: Filters, source = db.groups) {
@@ -598,6 +783,11 @@ export const SEGMENTS: {
     id: "large-split",
     label: "Large groups · split",
     filter: { size: "large", payment: "split" },
+  },
+  {
+    id: "small-split",
+    label: "Small groups · split",
+    filter: { size: "small", payment: "split" },
   },
   {
     id: "small",

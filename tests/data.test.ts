@@ -74,8 +74,8 @@ describe("Seeded business data", () => {
       ).size,
     ).toBe(4);
   });
-  it("connects six detailed sessions to truthful business outcomes", () => {
-    expect(db.sessions.filter((s) => s.detailed)).toHaveLength(6);
+  it("connects all curated participant sessions to truthful business outcomes", () => {
+    expect(db.sessions.filter((s) => s.detailed)).toHaveLength(23);
     for (const s of db.sessions.filter((s) => s.detailed)) {
       const g = db.groups.find((g) => g.id === s.groupId)!;
       const order = db.orders.find((o) => o.id === g.orderId)!;
@@ -89,7 +89,7 @@ describe("Seeded business data", () => {
     const failed = db.sessions.filter(
       (s) => s.groupId === "GO-1042" && s.detailed,
     );
-    expect(failed).toHaveLength(2);
+    expect(failed).toHaveLength(5);
     const decline = failed[1].events.find(
       (e) => e.label === "Authorization declined",
     )!;
