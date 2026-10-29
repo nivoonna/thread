@@ -129,7 +129,7 @@ describe("Shared journey evidence", () => {
       expect(f.brief).toContain("Oct 15–28, 2026");
       expect(f.brief).toContain("P-1042-4");
       const links = f.brief.match(/http[^\s]+/g) || [];
-      expect(links).toHaveLength(4);
+      expect(links.length).toBeGreaterThanOrEqual(8);
       for (const link of links) {
         const params = new URLSearchParams(new URL(link).hash.slice(1));
         if (params.get("page") === "studio") {

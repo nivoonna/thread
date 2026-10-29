@@ -126,7 +126,7 @@ test("shared order, all people, evidence, cohort return and copyable linked brie
       await expect(page.getByTestId("phone")).toBeVisible();
       await expect(
         page.locator(".timeline-event[aria-pressed=true]"),
-      ).toContainText("Authorization declined");
+      ).toHaveAttribute("data-event-id", params.get("record")!);
       expect(
         new URLSearchParams(new URL(page.url()).hash.slice(1)).get("moment"),
       ).toBe(params.get("moment"));
@@ -135,6 +135,7 @@ test("shared order, all people, evidence, cohort return and copyable linked brie
         page.getByRole("heading", { name: "Group Order funnel" }),
       ).toBeVisible();
   }
+  await page.goto("./#page=studio&session=S-1042-0&size=large&payment=split");
   await page
     .getByRole("button", {
       name: /Run investigation again|Investigate this journey/,

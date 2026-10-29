@@ -16,9 +16,9 @@ Help product managers decide where to focus, which problems to prioritize, and w
 
 **What to explore**
 
-- Open GO-1042 and inspect every participant at a shared time.
+- Play GO-1042 across all participants on one shared timeline.
 - Connect customer screens to payment and order records.
-- Explore comparable journeys, return to the case, and copy an evidence-linked brief.
+- Explore comparable journeys and copy a decision brief with evidence and validation priorities.
 
 **Built with**
 
