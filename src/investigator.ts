@@ -13,6 +13,7 @@ import {
   type Group,
   type Outcome,
 } from "./data";
+import { decisionBrief } from "./decisionBrief";
 import { snapshot, utc } from "./replay";
 export const QUESTIONS = [
   "What happened in this shared order?",
@@ -260,13 +261,18 @@ export function investigate(
       result: "Observations separated from hypotheses",
     },
   ];
-  const url = (e: Evidence) => {
-    const session = db.sessions.find((s) => s.id === e.sessionId);
-    const event =
-      session?.events.find((x) => x.id === e.eventId) || session?.events[0];
-    return `${baseUrl}#${new URLSearchParams({ page: session ? "studio" : "journey", ...filters, ...(session ? { session: session.id, moment: String(Date.parse(event!.at)), record: event!.id } : { stage: String(e.stage ?? 0), mode: e.type === "funnel" ? "abandoned" : "reached", compare: String(e.type === "comparison") }) })}`;
-  };
-  const brief = `THREAD · Investigation brief\nSynthetic data · authored Gather reconstructions · deterministic demo engine\n\nSelected order\n${selected?.id || "No curated order"}\n${participants || "No detailed participant evidence"}\n\nCohort and dates\n${filterLabel(filters)} · ${PERIOD_LABEL[filters.period]} (${current.total} groups)\nQuestion: ${QUESTIONS[question]}\n\nObserved evidence\n${observed}\n\nBusiness outcome and scope\n${business}\n\nHypothesis\n${possible}\n\nMissing evidence\n${uncertain}\n\nRecommended validation\n${next}\n\nSupporting evidence\n${evidence.map((e) => `${e.label}\n${url(e)}`).join("\n\n") || "No matching records"}`;
+  const brief = decisionBrief({
+    filters,
+    question: QUESTIONS[question],
+    selected,
+    baseUrl,
+    observed,
+    business,
+    possible,
+    uncertain,
+    next,
+    evidence,
+  });
   return {
     observed,
     business,
