@@ -1,20 +1,24 @@
 # THREAD
 
-_AI-native journey intelligence_
+_Journey intelligence for better product decisions_
 
 **What it is**
 
-THREAD is an interactive product concept for investigating customer journeys in Gather, a fictional food-delivery marketplace. Three connected screens take a product manager from a completion decline to the people, sessions, and transactions behind it.
+THREAD is an interactive product concept that helps product teams turn customer-journey evidence into better decisions. It connects behavior, session replays, and business outcomes in Gather, a fictional food-delivery marketplace.
 
 **The idea**
 
-A session replay shows what someone experienced. THREAD connects that experience to what happened in the business. One group order can involve several participants and sessions; a checkout tap is not an order confirmation. The interface keeps those distinctions visible throughout an investigation.
+A replay shows what someone experienced. THREAD connects that experience to what happened in the business. Several participants can share one order; a checkout tap is not a confirmed transaction.
+
+**The outcome**
+
+Help product managers decide where to focus, which problems to prioritize, and what to validate next. Every investigation separates observations from hypotheses and uncertainty, supporting decisions grounded in evidence without treating correlation as proof.
 
 **What to explore**
 
-- Follow a seven-stage funnel, change the cohort, and compare completion across segments.
-- Switch between a waiting host and a participant whose payment failed, preserving their shared order context.
-- Run an evidence-grounded investigation, follow its sources, and copy a brief that separates observations, hypotheses, and uncertainty.
+- Identify affected cohorts and funnel drop-offs.
+- Connect a host’s experience with a participant’s payment failure.
+- Follow supporting evidence and generate an actionable investigation brief.
 
 **Built with**
 
@@ -38,4 +42,4 @@ npm run test:e2e
 
 Deployment target: https://nivoonna.github.io/thread/ — publication pending verification.
 
-All 1,500 groups are synthetic and reproducible. Six sessions use deterministic UI reconstruction. The investigator runs local analysis, not a live LLM. No authentication, backend, paid API, or real customer data is required.
+All 1,500 groups are synthetic and reproducible. Six sessions use deterministic UI reconstruction. The investigator runs local analysis, not a live LLM.
