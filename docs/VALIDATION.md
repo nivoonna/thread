@@ -1,6 +1,6 @@
 # Validation record
 
-Validated locally on October 29, 2026. This improvement is intentionally **not pushed or deployed**, as requested. The public site continues to serve the earlier release.
+Validated locally on October 29, 2026. The results below describe the shared-order improvements. The **Validate and deploy THREAD** workflow repeats the automated checks before publishing to GitHub Pages; `version.json` identifies the published commit.
 
 ## Checks completed
 
@@ -30,4 +30,4 @@ The recent large split-payment cohort has 111/296 confirmed orders (37.5%), vers
 
 ## Limits
 
-All records and screens are synthetic, authored reconstructions. Only five curated groups have detailed replay evidence; the remaining aggregate groups do not. The deterministic investigator is not a live LLM. Proposed Grab integration, component versioning, capture, data pipelines and production security controls are explanatory concepts, not deployed capabilities. Curated examples do not establish prevalence or causality. Reload restores replay and comparison context; findings must be rerun after reload or changed inputs. Validation used Chromium, not a cross-browser/device matrix. No remote publication or deployment verification was attempted for this change.
+All records and screens are synthetic, authored reconstructions. Only five curated groups have detailed replay evidence; the remaining aggregate groups do not. The deterministic investigator is not a live LLM. Proposed Grab integration, component versioning, capture, data pipelines and production security controls are explanatory concepts, not deployed capabilities. Curated examples do not establish prevalence or causality. Reload restores replay and comparison context; findings must be rerun after reload or changed inputs. Validation used Chromium, not a cross-browser/device matrix. Public deployment is verified separately through the GitHub Actions run and the published `version.json`.
