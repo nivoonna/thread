@@ -4244,3 +4244,128 @@ td small {
 .group-playback progress::-moz-progress-bar {
   background: var(--green);
 }
+
+.brief-document {
+  max-height: min(58vh, 620px);
+  overflow-y: auto;
+  padding: 4px 18px 8px 2px;
+  scrollbar-width: thin;
+}
+.brief-document-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.brief-document .brief-summary {
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+  margin: 10px 0 12px;
+}
+.brief-scope,
+.brief-question {
+  font-size: 11px;
+  color: #65716a;
+  line-height: 1.6;
+}
+.brief-question {
+  margin-top: 6px;
+}
+.brief-section {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.brief-section h3 {
+  font-size: 14px;
+  color: var(--green-dark);
+  margin-bottom: 10px;
+}
+.brief-section p,
+.brief-section li {
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--ink);
+}
+.brief-section p + p,
+.brief-section li + li {
+  margin-top: 9px;
+}
+.brief-section ul,
+.brief-section ol {
+  padding-left: 19px;
+  margin: 0 0 12px;
+}
+.brief-section ul {
+  list-style: disc;
+}
+.brief-section ol {
+  list-style: decimal;
+}
+.brief-sources {
+  margin: 18px 0;
+  font-size: 12px;
+}
+.brief-sources summary,
+.brief-plain-text summary {
+  cursor: pointer;
+  color: var(--green-dark);
+  font-weight: 550;
+}
+.brief-sources li {
+  margin: 8px 0;
+}
+.brief-sources a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.brief-sources p,
+.brief-disclosure {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #65716a;
+  margin-top: 12px;
+}
+.brief-plain-text {
+  margin-top: 12px;
+  font-size: 11px;
+}
+.brief-plain-text .brief-text {
+  margin-top: 12px;
+}
+@media (max-width: 680px) {
+  .brief-document .brief-summary {
+    font-size: 16px;
+  }
+  .brief-document {
+    padding-right: 9px;
+  }
+}
+.brief-modal {
+  display: flex;
+  flex-direction: column;
+  height: min(760px, 90vh);
+  overflow: hidden;
+}
+.brief-modal .modal-heading,
+.brief-modal .modal-footer {
+  flex: none;
+}
+.brief-modal .brief-document {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.brief-modal .brief-plain-text {
+  flex: none;
+}
+.brief-modal:has(.brief-plain-text[open]) .brief-document {
+  display: none;
+}
+.brief-modal .brief-plain-text[open] {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.brief-modal .modal-footer {
+  margin-top: 16px;
+}

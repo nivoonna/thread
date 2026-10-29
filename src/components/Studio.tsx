@@ -45,6 +45,7 @@ import {
   connectedEvidence,
   utc,
 } from "../replay";
+import { BriefPreview } from "./BriefPreview";
 import { Phone } from "./Phone";
 import { Modal, Empty } from "./Shared";
 const kindIcons = {
@@ -273,6 +274,9 @@ export function Studio({
       setCopied(false);
       const textarea =
         document.querySelector<HTMLTextAreaElement>("#brief-text");
+      const plainText =
+        document.querySelector<HTMLDetailsElement>(".brief-plain-text");
+      if (plainText) plainText.open = true;
       textarea?.focus();
       textarea?.select();
     }
@@ -915,18 +919,23 @@ export function Studio({
         open={brief}
         onClose={() => setBrief(false)}
         title="Your investigation brief"
-        description="A decision recommendation, supporting evidence, proposed validation owners and measurable guardrails."
+        className="brief-modal"
+        description="Follow the case, assess its wider relevance, and decide what to investigate next."
         wide
       >
-        <textarea
-          id="brief-text"
-          className="brief-text"
-          aria-label="Investigation brief"
-          readOnly
-          value={finding?.brief || ""}
-        />
+        {finding && <BriefPreview document={finding.briefDocument} />}
+        <details className="brief-plain-text">
+          <summary>View plain-text version</summary>
+          <textarea
+            id="brief-text"
+            className="brief-text"
+            aria-label="Investigation brief"
+            readOnly
+            value={finding?.brief || ""}
+          />
+        </details>
         <div className="modal-footer">
-          <span>Includes synthetic-data and uncertainty disclosures.</span>
+          <span>Synthetic data · Copy includes all sections and evidence links.</span>
           <button className="button primary" onClick={copy}>
             {copied ? <Check size={15} /> : <Copy size={15} />}{" "}
             {copied ? "Copied to clipboard" : "Copy brief"}
