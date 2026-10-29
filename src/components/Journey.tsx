@@ -30,6 +30,8 @@ interface Props {
   filters: Filters;
   setFilters: (f: Filters) => void;
   stage: number;
+  mode: "reached" | "abandoned";
+  setMode: (mode: "reached" | "abandoned") => void;
   setStage: (n: number) => void;
   onSession: (id: string) => void;
   compare: boolean;
@@ -39,13 +41,14 @@ export function Journey({
   filters,
   setFilters,
   stage,
+  mode,
+  setMode,
   setStage,
   onSession,
   compare,
   setCompare,
 }: Props) {
-  const [mode, setMode] = useState<"reached" | "abandoned">("abandoned"),
-    [a, setA] = useState("large-split"),
+  const [a, setA] = useState("large-split"),
     [b, setB] = useState("small");
   const groups = selectGroups(filters),
     steps = funnel(groups),
@@ -170,7 +173,6 @@ export function Journey({
                 key={s.label}
                 onClick={() => {
                   setStage(i);
-                  if (i === 6) setMode("reached");
                 }}
                 className={`funnel-stage ${stage === i ? "active" : ""}`}
                 aria-pressed={stage === i}
