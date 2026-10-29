@@ -109,6 +109,12 @@ test("shared order, all people, evidence, cohort return and copyable linked brie
     .getByRole("button", { name: "Create investigation brief", exact: true })
     .first()
     .click();
+  await expect(
+    page.getByRole("article", { name: "Investigation brief document" }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Investigation brief", { exact: true }),
+  ).toBeHidden();
   const brief = await page
     .getByLabel("Investigation brief", { exact: true })
     .inputValue();
