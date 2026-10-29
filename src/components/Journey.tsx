@@ -212,7 +212,7 @@ export function Journey({
                       {i === 6
                         ? "Confirmed"
                         : i === 5
-                          ? "Submitted"
+                          ? "Attempted"
                           : i === 4
                             ? "Checkout"
                             : ""}
@@ -246,7 +246,7 @@ export function Journey({
             <span className="status-dot" />
             Click a stage to explore its underlying groups
           </span>
-          <span>Submission ≠ confirmation</span>
+          <span>Attempt ≠ confirmation</span>
         </div>
       </section>
       {compare && (
