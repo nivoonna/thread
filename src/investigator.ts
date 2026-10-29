@@ -13,7 +13,7 @@ import {
   type Group,
   type Outcome,
 } from "./data";
-import { decisionBrief } from "./decisionBrief";
+import { decisionBrief, type DecisionBrief } from "./decisionBrief";
 import { snapshot, utc } from "./replay";
 export const QUESTIONS = [
   "What happened in this shared order?",
@@ -37,6 +37,7 @@ export interface Finding {
   evidence: Evidence[];
   trace: { label: string; result: string }[];
   brief: string;
+  briefDocument: DecisionBrief;
 }
 export function investigate(
   filters: Filters,
@@ -261,15 +262,13 @@ export function investigate(
       result: "Observations separated from hypotheses",
     },
   ];
-  const brief = decisionBrief({
+  const briefDocument = decisionBrief({
     filters,
     question: QUESTIONS[question],
+    questionIndex: question,
     selected,
     baseUrl,
     observed,
-    business,
-    possible,
-    uncertain,
     next,
     evidence,
   });
@@ -281,7 +280,8 @@ export function investigate(
     next,
     evidence,
     trace,
-    brief,
+    brief: briefDocument.text,
+    briefDocument,
   };
 }
 export function outcomeCounts(groups: Group[]) {

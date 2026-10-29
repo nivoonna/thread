@@ -51,8 +51,21 @@ describe("Whole group autoplay", () => {
 });
 describe("PM decision brief", () => {
   it("separates an investment decision, unresolved group readiness and unmeasured recovery", () => {
-    const brief = investigate(FOCUS_FILTERS, 0, group.id).brief;
-    expect(brief).toContain("Decision requested");
+    const finding = investigate(FOCUS_FILTERS, 0, group.id);
+    const { brief, briefDocument } = finding;
+    expect(briefDocument.sections).toHaveLength(5);
+    let previous = -1;
+    for (const section of briefDocument.sections) {
+      const start = brief.indexOf(section.title);
+      expect(start).toBeGreaterThan(previous);
+      previous = start;
+      for (const text of [...section.paragraphs, ...(section.points || [])])
+        expect(brief).toContain(text);
+    }
+    const chronology = briefDocument.sections[0].points!;
+    expect(chronology[0]).toContain("12:31:38 UTC");
+    expect(chronology[1]).toContain("12:31:40 UTC");
+    expect(chronology[2]).toContain("12:31:42 UTC");
     expect(brief).toContain("Jo also has no recorded payment attempt");
     expect(brief).toContain("68/296");
     expect(brief).toContain("68/185");
@@ -61,9 +74,9 @@ describe("PM decision brief", () => {
     expect(brief).toContain("duplicate charges or orders");
     expect(brief).toContain("not a matched control");
     expect(brief).toContain(
-      "Lost revenue and expected uplift are not estimated",
+      "expected uplift and revenue impact are not estimated",
     );
-    expect(brief).toContain("proposed owners");
+    expect(brief).toContain("Payments + Data");
   });
   it("keeps counterexamples inside the cohort and adapts recommendations to other outcomes", () => {
     for (const filters of [
@@ -96,7 +109,7 @@ describe("PM decision brief", () => {
       "GO-1186",
     ).brief;
     expect(completed).not.toContain("0/0");
-    expect(completed).toContain("No non-completing groups");
+    expect(completed).toContain("111/111");
     expect(investigate(FOCUS_FILTERS, 0, "GO-1096").brief).toContain(
       "coordination and time-to-readiness",
     );
