@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -38,6 +38,7 @@ import {
   type Evidence,
 } from "../investigator";
 import {
+  groupPlayback,
   snapshot,
   journeyEnd,
   participantStatus,
@@ -66,7 +67,12 @@ interface Props {
   active: boolean;
   record: string;
   onMoment: (moment: number, record?: string) => void;
-  onSession: (id: string, event?: number, moment?: number) => void;
+  onSession: (
+    id: string,
+    event?: number,
+    moment?: number,
+    replace?: boolean,
+  ) => void;
   onJourney: () => void;
   onEvidence: (e: Evidence) => void;
 }
@@ -98,6 +104,58 @@ export function Studio({
     [copied, setCopied] = useState(false),
     [linkCopied, setLinkCopied] = useState(false),
     [kind, setKind] = useState("all");
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const replayRef = useRef<HTMLElement>(null);
+  const [tourIndex, setTourIndex] = useState(-1);
+  const [tourPlaying, setTourPlaying] = useState(false);
+  const [tourDelay, setTourDelay] = useState(2000);
+  const tour = useMemo(
+    () => (group?.id === "GO-1042" ? groupPlayback(group) : []),
+    [group?.id],
+  );
+  const tourStep = tour[tourIndex];
+  const stopTour = () => {
+    setTourPlaying(false);
+    setTourIndex(-1);
+  };
+  const focusTour = (index: number) => {
+    const step = tour[index];
+    if (!step) return;
+    setPlaying(false);
+    setTourIndex(index);
+    onSession(step.sessionId, 0, step.at, true);
+  };
+  const startTour = () => {
+    focusTour(0);
+    setTourPlaying(true);
+    (window.innerWidth > 900
+      ? workspaceRef.current
+      : replayRef.current
+    )?.scrollIntoView({ block: "start", behavior: "instant" });
+  };
+  const manualSession = (id: string, event = 0, at?: number) => {
+    stopTour();
+    setPlaying(false);
+    onSession(id, event, at);
+  };
+  useEffect(() => {
+    stopTour();
+  }, [group?.id, active]);
+  useEffect(() => {
+    if (
+      tourStep &&
+      (sessionId !== tourStep.sessionId || playhead !== tourStep.at)
+    )
+      stopTour();
+  }, [sessionId, playhead]);
+  useEffect(() => {
+    if (!tourPlaying || !active || !tourStep) return;
+    const timer = setTimeout(() => {
+      if (tourIndex >= tour.length - 1) setTourPlaying(false);
+      else focusTour(tourIndex + 1);
+    }, tourDelay);
+    return () => clearTimeout(timer);
+  }, [tourIndex, tourPlaying, tourDelay, active]);
   const investigatorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setLinkCopied(false);
@@ -108,6 +166,12 @@ export function Studio({
   useEffect(() => {
     setKind("all");
   }, [session?.id]);
+  useEffect(() => {
+    if (brief) {
+      setTourPlaying(false);
+      setPlaying(false);
+    }
+  }, [brief]);
   useEffect(() => {
     if (!active) setBrief(false);
   }, [active]);
@@ -175,6 +239,7 @@ export function Studio({
   const records = connectedEvidence(group);
   const payment = payments.find((p) => p.participantId === participant.id)!;
   const jump = (n: number) => {
+    stopTour();
     setPlaying(false);
     const e =
       session.events[Math.max(0, Math.min(n, session.events.length - 1))];
@@ -265,7 +330,7 @@ export function Studio({
           parent investigation
         </span>
       </div>
-      <div className="studio-workspace">
+      <div className="studio-workspace" ref={workspaceRef}>
         <aside className="timeline-panel">
           <div className="workspace-panel-title">
             <span>Journey timeline</span>
@@ -277,7 +342,7 @@ export function Studio({
               aria-label="Replay group"
               value={group.id}
               onChange={(e) =>
-                onSession(
+                manualSession(
                   available.find((s) => s.groupId === e.target.value)!.id,
                 )
               }
@@ -296,7 +361,7 @@ export function Studio({
               return (
                 <button
                   key={s.id}
-                  onClick={() => onSession(s.id, 0, playhead)}
+                  onClick={() => manualSession(s.id, 0, playhead)}
                   className={session.id === s.id ? "active" : ""}
                   aria-pressed={session.id === s.id}
                 >
@@ -343,6 +408,7 @@ export function Studio({
               return (
                 <button
                   key={e.id}
+                  data-event-id={e.id}
                   className={`timeline-event ${index === i ? "active" : ""} ${i < index ? "past" : ""}`}
                   onClick={() => jump(i)}
                   aria-pressed={index === i}
@@ -372,12 +438,76 @@ export function Studio({
             </p>
           </div>
         </aside>
-        <section className="replay-panel">
+        <section className="replay-panel" ref={replayRef}>
           <div className="workspace-panel-title">
             <span>Reconstructed customer screen</span>
             <span className="tiny-label">GATHER · iOS</span>
           </div>
-          <div className="player">
+          {tour.length > 0 && (
+            <div className="group-playback" data-testid="group-playback">
+              <div className="group-playback-heading">
+                <Users size={16} />
+                <strong>The whole group journey</strong>
+                <span>{group.size} people · one order</span>
+              </div>
+              <p>
+                {tourStep
+                  ? `${tourIndex + 1} / ${tour.length} · ${tourStep.title}`
+                  : "Watch from start to finish. Focus switches automatically between all participants."}
+              </p>
+
+              <div className="group-playback-actions">
+                <button
+                  className="button compact primary"
+                  onClick={() => {
+                    if (tourPlaying) setTourPlaying(false);
+                    else if (!tourStep || tourIndex === tour.length - 1)
+                      startTour();
+                    else setTourPlaying(true);
+                  }}
+                >
+                  {tourPlaying ? <Pause size={14} /> : <Play size={14} />}
+                  {tourPlaying
+                    ? "Pause group autoplay"
+                    : !tourStep
+                      ? "Play whole group"
+                      : tourIndex === tour.length - 1
+                        ? "Replay whole group"
+                        : "Resume group autoplay"}
+                </button>
+                {tourStep && (
+                  <button className="text-button" onClick={stopTour}>
+                    Inspect manually
+                  </button>
+                )}
+                <label className="tour-pace">
+                  <span className="sr-only">Autoplay pace</span>
+                  <select
+                    aria-label="Autoplay pace"
+                    value={tourDelay}
+                    onChange={(e) => setTourDelay(Number(e.target.value))}
+                  >
+                    <option value={4000}>Relaxed · 4s/event</option>
+                    <option value={2000}>Standard · 2s/event</option>
+                    <option value={1000}>Quick · 1s/event</option>
+                  </select>
+                </label>
+              </div>
+              {tourStep && (
+                <progress
+                  aria-label="Whole group progress"
+                  max={tour.length}
+                  value={tourIndex + 1}
+                />
+              )}
+              <small>
+                {tourStep && tourIndex === tour.length - 1 && !tourPlaying
+                  ? "Group journey complete. Review the evidence or create an investigation brief."
+                  : "Event-by-event playback · quiet gaps skipped · pause or select a person to inspect."}
+              </small>
+            </div>
+          )}
+          <div className="player" hidden={!!tourStep}>
             <div className="scrub-marks">
               {session.events.map((e, i) => (
                 <button
@@ -400,6 +530,7 @@ export function Studio({
               step="1"
               value={cursor}
               onChange={(e) => {
+                stopTour();
                 setPlaying(false);
                 setCursor(Number(e.target.value));
               }}
@@ -416,14 +547,25 @@ export function Studio({
               </button>
               <button
                 className="play-button"
-                title={playing ? "Pause replay" : "Play replay"}
-                aria-label={playing ? "Pause replay" : "Play replay"}
+                title={playing || tourPlaying ? "Pause replay" : "Play replay"}
+                aria-label={
+                  playing || tourPlaying ? "Pause replay" : "Play replay"
+                }
                 onClick={() => {
+                  if (tourStep) {
+                    if (tourIndex === tour.length - 1) startTour();
+                    else setTourPlaying(!tourPlaying);
+                    return;
+                  }
                   if (cursor >= duration) setCursor(0);
                   setPlaying(!playing);
                 }}
               >
-                {playing ? <Pause size={17} /> : <Play size={17} />}
+                {playing || tourPlaying ? (
+                  <Pause size={17} />
+                ) : (
+                  <Play size={17} />
+                )}
               </button>
               <button
                 className="icon-button"
@@ -438,6 +580,12 @@ export function Studio({
                 {time(cursor)} <span>/ {time(duration)}</span>
               </span>
               <select
+                disabled={!!tourStep}
+                title={
+                  tourStep
+                    ? "Use Autoplay pace for the group journey"
+                    : "Playback speed"
+                }
                 aria-label="Playback speed"
                 value={speed}
                 onChange={(e) => setSpeed(Number(e.target.value))}
@@ -502,7 +650,7 @@ export function Studio({
                 UTC
               </span>
             </div>
-            <p>{event?.detail || state.boundary}</p>
+            <p>{tourStep?.detail || event?.detail || state.boundary}</p>
             <code>{event?.id || session.id}</code>
           </div>
         </section>
@@ -587,7 +735,7 @@ export function Studio({
                   key={r.event.id}
                   className="evidence-record"
                   onClick={() =>
-                    onSession(
+                    manualSession(
                       r.session.id,
                       r.session.events.findIndex((e) => e.id === r.event.id),
                     )
@@ -702,7 +850,13 @@ export function Studio({
                     </div>
                     <div className="evidence-links">
                       {finding.evidence.map((e, i) => (
-                        <button key={i} onClick={() => onEvidence(e)}>
+                        <button
+                          key={i}
+                          onClick={() => {
+                            stopTour();
+                            onEvidence(e);
+                          }}
+                        >
                           <span>{String(i + 1).padStart(2, "0")}</span>
                           {e.label}
                           <ArrowRight size={12} />
@@ -761,7 +915,7 @@ export function Studio({
         open={brief}
         onClose={() => setBrief(false)}
         title="Your investigation brief"
-        description="A concise, copyable record of the evidence and what to do next."
+        description="A decision recommendation, supporting evidence, proposed validation owners and measurable guardrails."
         wide
       >
         <textarea

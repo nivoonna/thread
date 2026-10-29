@@ -85,3 +85,67 @@ function sourceCategory(e: JourneyEvent) {
   if (/authoriz/i.test(e.label)) return "payment";
   return "order";
 }
+
+export interface GroupPlaybackStep {
+  sessionId: string;
+  at: number;
+  eventId: string;
+  title: string;
+  detail: string;
+}
+/** One chronological stream across everyone; paired render records share the business moment. */
+export function groupPlayback(group: Group): GroupPlaybackStep[] {
+  const records = connectedEvidence(group).filter(
+    (r) => !r.event.id.endsWith("-render"),
+  );
+  const steps: GroupPlaybackStep[] = [];
+  for (const r of records) {
+    steps.push({
+      sessionId: r.session.id,
+      at: Date.parse(r.event.at),
+      eventId: r.event.id,
+      title: `${r.participant.name} · ${r.event.label}`,
+      detail: r.event.detail,
+    });
+    if (
+      r.event.label === "Submission blocked" &&
+      r.event.pendingParticipantId
+    ) {
+      const other = db.sessions.find(
+        (s) =>
+          s.groupId === group.id &&
+          s.participantId === r.event.pendingParticipantId &&
+          s.detailed,
+      );
+      const state = other && snapshot(other, Date.parse(r.event.at));
+      if (other && state?.screen) {
+        const person = db.participants.find(
+          (p) => p.id === other.participantId,
+        )!;
+        steps.push({
+          sessionId: other.id,
+          at: Date.parse(r.event.at),
+          eventId: state.screen.id,
+          title: `Same moment · ${person.name}’s view`,
+          detail: `The shared clock stays at ${utc(r.event.at)}. ${person.name}’s last recorded screen is from ${utc(state.screen.at)}; compare it with the host’s screen.`,
+        });
+      }
+    }
+  }
+  const host = db.sessions.find(
+    (s) =>
+      s.groupId === group.id &&
+      s.detailed &&
+      db.participants.find((p) => p.id === s.participantId)?.role === "Host",
+  );
+  const order = db.orders.find((o) => o.id === group.orderId);
+  if (host && order && steps.length)
+    steps.push({
+      sessionId: host.id,
+      at: journeyEnd(group),
+      eventId: host.events.at(-1)!.id,
+      title: "Shared order outcome",
+      detail: `${group.id}: ${order.status.replaceAll("_", " ")}. ${order.confirmedAt ? `Confirmed at ${utc(order.confirmedAt)}.` : "No order confirmation recorded. Individual authorization does not mean the shared order completed."}`,
+    });
+  return steps;
+}

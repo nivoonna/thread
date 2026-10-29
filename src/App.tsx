@@ -136,22 +136,30 @@ export default function App() {
     history[replace ? "replaceState" : "pushState"](null, "", `#${params}`);
     if (change.page && change.page !== route.page) window.scrollTo({ top: 0 });
   }
-  const onSession = (id: string, event = 0, moment?: number) => {
-    navigate({
-      page: "studio",
-      sessionId: id,
-      event,
-      record:
-        moment === undefined
-          ? db.sessions.find((s) => s.id === id)?.events[event]?.id || ""
-          : "",
-      moment:
-        moment ??
-        (Date.parse(
-          db.sessions.find((s) => s.id === id)?.events[event]?.at || "",
-        ) ||
-          0),
-    });
+  const onSession = (
+    id: string,
+    event = 0,
+    moment?: number,
+    replace = false,
+  ) => {
+    navigate(
+      {
+        page: "studio",
+        sessionId: id,
+        event,
+        record:
+          moment === undefined
+            ? db.sessions.find((s) => s.id === id)?.events[event]?.id || ""
+            : "",
+        moment:
+          moment ??
+          (Date.parse(
+            db.sessions.find((s) => s.id === id)?.events[event]?.at || "",
+          ) ||
+            0),
+      },
+      replace,
+    );
   };
   const remember = () =>
     JSON.stringify({
