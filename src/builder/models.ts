@@ -74,3 +74,8 @@ export interface Query {
   window?: string;
   authorized?: boolean;
 }
+
+export interface MetricReference {
+  metricId: string;
+  version: number;
+}

@@ -9,6 +9,7 @@ import {
   edit,
   deprecate,
   impact,
+  draftImpact,
   query,
   calculate,
   initialVersions,
@@ -188,4 +189,44 @@ it("rejects unavailable transitive dependencies and schema type mismatches", () 
     assets.filter((a) => a.id !== "group_order_payment_attempts"),
   );
   expect(checks.find((c) => c.name === "Dependencies")?.status).toBe("error");
+});
+
+describe("draft base-version change impact", () => {
+  it("compares v1 edits to v1 after publishing a different v2 and retains v1 consumers", () => {
+    const versions = initialVersions(),
+      v1 = versions[0],
+      v2Draft = edit(v1);
+    v2Draft.window = "all";
+    const v2 = publish(validated(v2Draft, versions), versions),
+      history = [...versions, v2];
+    const olderDraft = edit(v1);
+    olderDraft.description = "Metadata revision";
+    const result = draftImpact(olderDraft, history);
+    expect(result?.base).toBe(v1);
+    expect(result?.changed).toEqual([]);
+    expect(result?.breaking).toBe(false);
+    expect(result?.consumers.map((c) => c.label)).toEqual([
+      "Product dashboard",
+      "Internal AI agent",
+      "Thread investigation",
+    ]);
+    olderDraft.window = "previous";
+    expect(draftImpact(olderDraft, history)?.changed).toEqual(["window"]);
+    expect(draftImpact(edit(v2), history)?.consumers).toEqual([]);
+  });
+  it("does not silently compare unbased, missing or renamed contracts to the latest version", () => {
+    const versions = initialVersions(),
+      d = edit(versions[0]);
+    expect(
+      draftImpact({ ...d, baseVersion: undefined }, versions),
+    ).toBeUndefined();
+    expect(draftImpact({ ...d, baseVersion: 99 }, versions)).toBeUndefined();
+    expect(draftImpact({ ...d, id: "new_contract" }, versions)).toBeUndefined();
+  });
+  it("keeps older-version impact scoped to the matching metric identity", () => {
+    const versions = initialVersions(),
+      failure = versions.find((v) => v.definition.kind === "failure")!;
+    expect(draftImpact(edit(failure), versions)?.base).toBe(failure);
+    expect(draftImpact(edit(failure), versions)?.consumers).toEqual([]);
+  });
 });

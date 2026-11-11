@@ -56,3 +56,15 @@ Initial browser test attempts exposed an overly strict native-select label locat
 ## Release state
 
 Feature branch: `feature/builder-studio`. Logical commits cover workspace, domain, catalog, authoring, governance, consumption, handoff, tests/hardening and documentation. The existing deployment workflow is unchanged; added pull-request CI only validates. Main and the live GitHub Pages deployment are not changed by this feature branch. Local built-output verification is not proof of deployed feature behavior. Review and explicit approval are required before merging or deploying.
+
+## Review fixes after PR #1
+
+PR #1 was merged before this review. The follow-up remains on `feature/builder-studio` for review; these fixes do not merge main or trigger deployment.
+
+- Publishing and catalog reuse now hand the API Playground an explicit metric ID and immutable version, independently of catalog selection. Publishing Payment Failure Rate or a new metric identifier opens that exact contract. Query filter defaults remain unchanged.
+- Change impact resolves the draft's metric ID and `baseVersion`. Editing v1 after v2 exists compares against v1 and lists its pinned consumers. Missing ancestry and new identifiers are not silently compared against the latest unrelated version.
+- Payment Failure Rate's preview numerator column reads **Groups with declined payment**; completion keeps **Completed**.
+
+Four browser regressions reproduced the defects on the pre-fix build. They cover stale catalog/query selection, both seeded metrics, a new metric identifier, the exact request/response version, and editing/querying an older base with pinned consumers. Unit coverage also protects base-version resolution, unavailable ancestry and metric identity isolation. Local verification: 30 unit tests and 17 browser tests passed, including all existing investigation regressions; production build, standalone TypeScript, formatting and whitespace checks passed. No lint script exists.
+
+PR #1's GitHub validation was investigated separately: its workflow is active, but the run remains queued with zero jobs/check runs, no error annotations and no available logs. Earlier deployment attempts reported GitHub's internal startup error before any application job. Remote validation is not counted as passed. A follow-up PR requests validation of the fix commit without deploying it.

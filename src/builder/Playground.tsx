@@ -1,21 +1,21 @@
 import { useState } from "react";
-import { consumers, query, type Version } from "./domain";
+import { consumers, query, type Version, type MetricReference } from "./domain";
 export function Playground({
   versions,
   investigate,
-  metricId,
+  selection,
 }: {
-  metricId: string;
+  selection?: MetricReference;
   versions: Version[];
   investigate: () => void;
 }) {
   const [id, setId] = useState(
-      versions.some((v) => v.definition.id === metricId)
-        ? metricId
-        : versions[0]?.definition.id || "",
+      selection?.metricId ?? versions[0]?.definition.id ?? "",
     ),
     [version, setVersion] = useState(
-      versions.filter((v) => v.definition.id === id).at(-1)?.version || 1,
+      selection?.version ??
+        versions.filter((v) => v.definition.id === id).at(-1)?.version ??
+        1,
     ),
     [dimension, setDimension] = useState(""),
     [payment, setPayment] = useState("all"),
