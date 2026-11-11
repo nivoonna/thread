@@ -124,8 +124,9 @@ test("workspace landing changes retain the active draft and explicit investigati
   await page
     .getByRole("button", { name: "Query published metric", exact: true })
     .click();
+  await page.getByRole("button", { name: "Run Query", exact: true }).click();
   await page
-    .getByRole("button", { name: "Investigate in Thread", exact: true })
+    .getByRole("button", { name: "Investigate this cohort", exact: true })
     .click();
   await expect(page).toHaveURL(/page=journey/);
   await expect(workspace).toHaveValue("investigate");

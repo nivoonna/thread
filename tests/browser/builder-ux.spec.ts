@@ -10,10 +10,17 @@ test("saved draft is protected when creating another metric", async ({
   await page
     .getByRole("textbox", { name: "Business owner", exact: true })
     .fill("Review owner");
-  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(
+    page.getByText(
+      "Changes are saved automatically for this session. Refresh starts a fresh demo.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save draft", exact: true }),
+  ).toHaveCount(0);
   await page.getByRole("button", { name: "Data Catalog", exact: true }).click();
   await page
-    .getByRole("button", { name: "Create metric", exact: true })
+    .getByRole("button", { name: "Create new version", exact: true })
     .click();
   const dialog = page.getByRole("dialog", {
     name: "Keep or replace your draft?",
@@ -23,7 +30,7 @@ test("saved draft is protected when creating another metric", async ({
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await page
-    .getByRole("button", { name: "Create metric", exact: true })
+    .getByRole("button", { name: "Create new version", exact: true })
     .click();
   await dialog
     .getByRole("button", { name: "Continue current draft", exact: true })
@@ -36,7 +43,7 @@ test("saved draft is protected when creating another metric", async ({
   ).toHaveValue("Review owner");
   await page.getByRole("button", { name: "Data Catalog", exact: true }).click();
   await page
-    .getByRole("button", { name: "Create metric", exact: true })
+    .getByRole("button", { name: "Create new version", exact: true })
     .click();
   await dialog
     .getByRole("button", { name: "Discard and start new draft", exact: true })
@@ -101,7 +108,7 @@ test("catalog details and actions follow results while explicit asset links clea
   await expect(page.getByRole("status")).toContainText("No assets");
   await expect(details).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Create metric", exact: true }),
+    page.getByRole("button", { name: "Create new version", exact: true }),
   ).toHaveCount(0);
   await search.fill("");
   await expect(details).toBeVisible();

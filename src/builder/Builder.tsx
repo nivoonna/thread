@@ -5,12 +5,13 @@ import { Governance } from "./Governance";
 import { Author } from "./Author";
 import { useState } from "react";
 import {
-  assets,
   catalog,
   consumers,
   initialVersions,
   edit,
   hasDraftChanges,
+  preferredVersion,
+  type QueryCohort,
   type Asset,
   type Draft,
   type Version,
@@ -39,10 +40,11 @@ export function Builder({
 }: {
   view: View;
   go: (v: View) => void;
-  investigate: () => void;
+  investigate: (cohort: QueryCohort) => void;
 }) {
   const [versions, setVersions] = useState<Version[]>(initialVersions),
     [draft, setDraft] = useState<Draft>(() => edit(versions[0])),
+    [published, setPublished] = useState<Version>(),
     [pendingDraft, setPendingDraft] = useState<Draft>(),
     [querySelection, setQuerySelection] = useState<MetricReference>(),
     [selected, setSelected] = useState("group_orders"),
@@ -53,7 +55,15 @@ export function Builder({
   const list = catalog(versions, search, type, domain, status),
     all = catalog(versions),
     asset = list.find((a) => a.id === selected),
-    contract = versions.filter((v) => v.definition.id === selected).at(-1);
+    contract = preferredVersion(versions, selected);
+  function updateDraft(next: Draft) {
+    setDraft(next);
+    setPublished(undefined);
+  }
+  function editDraft() {
+    setPublished(undefined);
+    go("metric");
+  }
   function openQuery(version: Version) {
     setQuerySelection({
       metricId: version.definition.id,
@@ -72,17 +82,13 @@ export function Builder({
     if (hasDraftChanges(draft, versions)) {
       setPendingDraft(next);
     } else {
-      setDraft(next);
+      updateDraft(next);
       go("metric");
     }
   }
   function create(a: Asset) {
     requestDraft({
-      ...edit(
-        versions
-          .filter((v) => v.definition.id === "group_order_completion_rate")
-          .at(-1)!,
-      ),
+      ...edit(preferredVersion(versions, "group_order_completion_rate")!),
       source: a.id,
     });
   }
@@ -108,7 +114,7 @@ export function Builder({
             className="button"
             onClick={() => {
               if (pendingDraft) {
-                setDraft(pendingDraft);
+                updateDraft(pendingDraft);
                 setPendingDraft(undefined);
                 go("metric");
               }
@@ -123,8 +129,8 @@ export function Builder({
           <div className="eyebrow">MEASUREMENT WORKSPACE</div>
           <h1>{builderLabels[view]}</h1>
           <p>
-            Gather synthetic data · GrabFood Group Payments v2 is an
-            illustrative use case.
+            Illustrative GrabFood Group Payments v2 scenario · Gather synthetic
+            data
           </p>
         </div>
         <span>Local simulation</span>
@@ -151,74 +157,44 @@ export function Builder({
               Find Group Orders data
             </button>
           </div>
-          <dl className="builder-stats">
-            <div>
-              <dt>Certified metrics</dt>
-              <dd>
-                {
-                  all.filter(
-                    (a) => a.type === "metric" && a.status === "Certified",
-                  ).length
-                }
-              </dd>
-            </div>
-            <div>
-              <dt>Discoverable assets</dt>
-              <dd>{all.length}</dd>
-            </div>
-            <div>
-              <dt>Consuming applications</dt>
-              <dd>{consumers.length}</dd>
-            </div>
-            <div>
-              <dt>Healthy sources</dt>
-              <dd>
-                {assets.filter((a) => a.fresh && a.completeness >= 0.99).length}{" "}
-                / {assets.length}
-              </dd>
-            </div>
-          </dl>
-          <div className="builder-grid">
+          <div>
             <section className="builder-panel">
-              <h2>Recent versions</h2>
-              {versions.map((v) => (
-                <button
-                  className="builder-row"
-                  key={v.definition.id + v.version}
-                  onClick={() => {
-                    openAsset(v.definition.id);
-                    go("catalog");
-                  }}
-                >
-                  <span>
-                    {v.definition.name}
-                    <small>
-                      {v.definition.maintainer} · {v.publishedAt.slice(0, 10)}
-                    </small>
-                  </span>
-                  <span>
-                    v{v.version} · {v.state}
-                  </span>
-                </button>
-              ))}
+              <h2>Metrics</h2>
+              {all
+                .filter((a) => a.type === "metric")
+                .map((a) => preferredVersion(versions, a.id)!)
+                .map((v) => (
+                  <button
+                    className="builder-row"
+                    key={v.definition.id + v.version}
+                    onClick={() => {
+                      openAsset(v.definition.id);
+                      go("catalog");
+                    }}
+                  >
+                    <span>
+                      {v.definition.name}
+                      <small>
+                        {v.definition.maintainer} · {v.publishedAt.slice(0, 10)}
+                      </small>
+                    </span>
+                    <span>
+                      v{v.version} · {v.state}
+                    </span>
+                  </button>
+                ))}
             </section>
-            <section className="builder-panel">
-              <h2>Needs attention</h2>
-              <p>
-                {draft.name} · {draft.state}
-              </p>
-              <button className="button" onClick={() => go("metric")}>
-                Continue draft
-              </button>
-              <details>
-                <summary>Platform responsibilities</summary>
+            {hasDraftChanges(draft, versions) && (
+              <section className="builder-panel">
+                <h2>Your draft</h2>
                 <p>
-                  Producers own source contracts. Builders maintain metric
-                  definitions. Consumers pin published versions. This local demo
-                  complements conceptual catalog, quality and identity services.
+                  {draft.name} · {draft.state}
                 </p>
-              </details>
-            </section>
+                <button className="button" onClick={editDraft}>
+                  Continue draft
+                </button>
+              </section>
+            )}
           </div>
         </>
       )}
@@ -262,6 +238,7 @@ export function Builder({
                 <option value="">All statuses</option>
                 <option>Certified</option>
                 <option>Available</option>
+                <option>Deprecated</option>
               </select>
             </label>
           </div>
@@ -320,19 +297,39 @@ export function Builder({
                   <p>{asset.description}</p>
                 </div>
                 {asset.type === "product" ? (
-                  <button
-                    className="button primary"
-                    onClick={() => create(asset)}
-                  >
-                    Create metric
-                  </button>
+                  <div className="builder-actions">
+                    <button
+                      className="button primary"
+                      onClick={() =>
+                        openQuery(
+                          preferredVersion(
+                            versions,
+                            "group_order_completion_rate",
+                          )!,
+                        )
+                      }
+                    >
+                      Use existing metric
+                    </button>
+                    <button className="button" onClick={() => create(asset)}>
+                      Create new version
+                    </button>
+                  </div>
                 ) : asset.type === "metric" ? (
-                  <button
-                    className="button primary"
-                    onClick={() => openQuery(contract!)}
-                  >
-                    Use existing metric
-                  </button>
+                  <div className="builder-actions">
+                    <button
+                      className="button primary"
+                      onClick={() => openQuery(contract!)}
+                    >
+                      Use existing metric
+                    </button>
+                    <button
+                      className="button"
+                      onClick={() => requestDraft(edit(contract!))}
+                    >
+                      Create new version
+                    </button>
+                  </div>
                 ) : (
                   <button
                     className="button"
@@ -447,7 +444,7 @@ export function Builder({
       {view === "metric" && (
         <Author
           draft={draft}
-          setDraft={setDraft}
+          setDraft={updateDraft}
           versions={versions}
           next={() => go("validation")}
         />
@@ -455,10 +452,22 @@ export function Builder({
       {view === "validation" && (
         <Governance
           draft={draft}
-          setDraft={setDraft}
+          setDraft={updateDraft}
           versions={versions}
           setVersions={setVersions}
-          go={go}
+          go={editDraft}
+          published={
+            published &&
+            versions.find(
+              (v) =>
+                v.definition.id === published.definition.id &&
+                v.version === published.version,
+            )
+          }
+          onPublished={(v) => {
+            setDraft(edit(v));
+            setPublished(v);
+          }}
           onQuery={openQuery}
           onNewDraft={(version) => requestDraft(edit(version))}
         />
