@@ -21,7 +21,7 @@ import {
   type Filters,
 } from "./data";
 import type { Evidence } from "./investigator";
-type Page = "overview" | "journey" | "studio";
+type Page = "overview" | "journey" | "studio" | "builder";
 interface RouteState {
   page: Page;
   filters: Filters;
@@ -61,7 +61,7 @@ function readRoute(): RouteState {
     fallback: T,
   ): T => (values.includes(p.get(key) as T) ? (p.get(key) as T) : fallback);
   return {
-    page: valid("page", ["overview", "journey", "studio"], "overview"),
+    page: valid("page", ["overview", "journey", "studio", "builder"], "overview"),
     filters: {
       size: valid("size", ["all", "small", "large"], "all"),
       payment: valid("payment", ["all", "single", "split"], "all"),
@@ -219,6 +219,7 @@ export default function App() {
     overview: "Product overview",
     journey: "Journey analysis",
     studio: "Investigation studio",
+    builder: "Builder Studio",
   };
   return (
     <div
@@ -258,6 +259,7 @@ export default function App() {
           </div>
           <span className="workspace-badge">DEMO</span>
         </div>
+        <div className="workspace-switch" aria-label="Workspace switcher"><button className="button" aria-pressed={route.page !== "builder"} onClick={() => navigate({ page: "overview" })}>Investigate</button><button className="button" aria-pressed={route.page === "builder"} onClick={() => navigate({ page: "builder" })}>Builder Studio</button></div>
         <div className="nav-label">WORKSPACE</div>
         <nav aria-label="Main navigation">
           {(
@@ -281,7 +283,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-connection">
+        <div className="sidebar-connection" hidden={route.page === "builder"}>
           <div className="thread-illustration" aria-hidden="true">
             <i />
             <i />
@@ -339,6 +341,7 @@ export default function App() {
           </div>
         </header>
         <main id="main-content" tabIndex={-1}>
+          {route.page === "builder" && <section className="builder"><h1>Builder Studio</h1><p>Measurement workspace · implementation in progress</p></section>}
           <div hidden={route.page !== "overview"}>
             <Overview
               onInvestigate={() =>
