@@ -16,7 +16,7 @@ test("golden measurement journey recovers validation, publishes, queries and pre
   await page.getByLabel("Search assets").fill("group_orders");
   await page.getByRole("button", { name: "group_orders", exact: true }).click();
   await page
-    .getByRole("button", { name: "Create metric", exact: true })
+    .getByRole("button", { name: "Create new version", exact: true })
     .click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page.getByLabel("Modeled source")).toHaveValue("group_orders");
@@ -31,6 +31,7 @@ test("golden measurement journey recovers validation, publishes, queries and pre
   await expect(
     page.getByRole("button", { name: "Publish version", exact: true }),
   ).toBeDisabled();
+  await page.getByText("Demo checks", { exact: true }).click();
   await page
     .getByRole("button", { name: "Test legacy field reference" })
     .click();
@@ -68,6 +69,7 @@ test("golden measurement journey recovers validation, publishes, queries and pre
   ).toHaveValue("2");
   await page.getByRole("button", { name: "Run Query", exact: true }).click();
   await expect(page.getByLabel("API response")).toContainText('"version": 2');
+  await page.getByText("Request and response", { exact: true }).click();
   await page.getByRole("button", { name: "Copy request", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
@@ -84,7 +86,7 @@ test("golden measurement journey recovers validation, publishes, queries and pre
     fullPage: true,
   });
   await page
-    .getByRole("button", { name: "Investigate in Thread", exact: true })
+    .getByRole("button", { name: "Investigate this cohort", exact: true })
     .click();
   await expect(page).toHaveURL(/page=journey/);
   for (const [k, v] of new URLSearchParams(original.slice(1)))
@@ -118,25 +120,33 @@ test("builder routes refresh, history, keyboard help, errors and tablet layout",
       ),
     ).toBe(true);
   }
+  await expect(
+    page
+      .getByRole("combobox", { name: "Version", exact: true })
+      .locator("option"),
+  ).not.toContainText(["v999"]);
+  await expect(
+    page
+      .getByRole("combobox", { name: "Group by", exact: true })
+      .locator("option"),
+  ).not.toContainText(["unsupported"]);
+  await page.getByText("Demo checks", { exact: true }).click();
   await page
-    .getByRole("combobox", { name: "Version", exact: true })
-    .selectOption("999");
-  await page.getByRole("button", { name: "Run Query", exact: true }).click();
+    .getByRole("button", { name: "Test missing version", exact: true })
+    .click();
   await expect(page.getByRole("alert")).toContainText(
     "METRIC_VERSION_NOT_FOUND",
   );
+  await expect(
+    page.getByRole("combobox", { name: "Version", exact: true }),
+  ).toHaveValue("1");
   await page
-    .getByRole("combobox", { name: "Version", exact: true })
-    .selectOption("1");
-  await page
-    .getByRole("combobox", { name: "Group by", exact: true })
-    .selectOption("market");
-  await page.getByRole("button", { name: "Run Query", exact: true }).click();
+    .getByRole("button", { name: "Test unsupported dimension", exact: true })
+    .click();
   await expect(page.getByRole("alert")).toContainText("UNSUPPORTED_DIMENSION");
-  await page
-    .getByRole("combobox", { name: "Group by", exact: true })
-    .selectOption("");
-  await page.getByText("Access simulation", { exact: true }).click();
+  await expect(
+    page.getByRole("combobox", { name: "Group by", exact: true }),
+  ).toHaveValue("");
   await page.getByLabel("Consumer authorized (simulated)").uncheck();
   await page.getByRole("button", { name: "Run Query", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("UNAUTHORIZED");
@@ -202,6 +212,12 @@ test("published edit creates a new immutable version with impact and deprecation
     .getByRole("button", { name: "Deprecate v1", exact: true })
     .first()
     .click();
+  await expect(
+    page.getByRole("dialog", { name: "Deprecate v1?" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Confirm deprecation", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Query published metric", exact: true })
     .click();
@@ -259,10 +275,14 @@ for (const scenario of [
       .filter({ hasText: scenario.source })
       .getByRole("button", { name: "New draft from v1", exact: true })
       .click();
-    if (scenario.published !== scenario.source)
+    if (scenario.published !== scenario.source) {
+      await page
+        .getByText("Identifier and technical ownership", { exact: true })
+        .click();
       await page
         .getByRole("textbox", { name: "Machine identifier", exact: true })
         .fill(scenario.published);
+    }
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await page

@@ -6,8 +6,11 @@ import {
   validate,
   type Draft,
   type Version,
+  type Dimension,
 } from "./domain";
 import { Help } from "./Help";
+import { Results } from "./Results";
+import { calculationText, dimensionLabels, periodLabels } from "./labels";
 export function Author({
   draft: d,
   setDraft,
@@ -21,18 +24,52 @@ export function Author({
 }) {
   const [step, setStep] = useState(0),
     [preview, setPreview] = useState(false),
-    [saved, setSaved] = useState(false);
+    [breakdown, setBreakdown] = useState<Dimension | "">(d.dimensions[0] ?? "");
+  const selectedBreakdown = d.dimensions.includes(breakdown as Dimension)
+    ? breakdown
+    : (d.dimensions[0] ?? "");
   const update = (patch: Partial<Draft>) => {
     setDraft({ ...d, ...patch, state: "Draft" });
     setPreview(false);
-    setSaved(false);
   };
   const issues = validate(d, versions).filter((c) => c.status === "error");
+  const fields = [
+    ["name", "Metric name"],
+    ["description", "Business definition"],
+    ["businessOwner", "Business owner"],
+  ] as const;
+  const technicalFields = [
+    ["id", "Machine identifier"],
+    ["maintainer", "Technical maintainer"],
+    ["intendedUse", "Intended use"],
+  ] as const;
+  const definitionIncomplete = [...fields, ...technicalFields].some(
+    ([key]) => !d[key].trim(),
+  );
+  const input = ([key, label]:
+    (typeof fields)[number] | (typeof technicalFields)[number]) => (
+    <div key={key}>
+      <label htmlFor={`metric-${key}`}>{label}</label>
+      <input
+        id={`metric-${key}`}
+        value={d[key]}
+        onChange={(e) => update({ [key]: e.target.value })}
+        required
+        aria-invalid={!d[key].trim()}
+        aria-describedby={!d[key].trim() ? `error-${key}` : undefined}
+      />
+      {!d[key].trim() && (
+        <span id={`error-${key}`} className="error">
+          {label} is required.
+        </span>
+      )}
+    </div>
+  );
   let result: ReturnType<typeof calculate> | undefined,
     error = "";
   if (preview)
     try {
-      result = calculate(d, { dimension: d.dimensions[0] });
+      result = calculate(d, { dimension: selectedBreakdown });
     } catch (e) {
       error = (e as Error).message;
     }
@@ -54,40 +91,41 @@ export function Author({
       <section className="builder-panel">
         <div className="builder-heading">
           <h2>{d.name || "Untitled metric"}</h2>
-          <span>{d.state} · session draft</span>
+          <span>
+            {d.state}
+            {d.baseVersion ? ` · based on v${d.baseVersion}` : ""}
+          </span>
         </div>
+        <p className="builder-caption">
+          Changes are saved automatically for this session. Refresh starts a
+          fresh demo.
+        </p>
         {versions.some((v) => v.definition.id === d.id) && (
           <p className="builder-notice">
-            This identifier already has published versions. Saving and
-            publishing creates the next version; existing consumers stay pinned.
+            You’re creating a new version of an existing metric. Published
+            versions and consumer pins stay unchanged.
           </p>
         )}
         {step === 0 && (
-          <div className="builder-form">
-            {(
-              [
-                ["name", "Metric name"],
-                ["id", "Machine identifier"],
-                ["description", "Business definition"],
-                ["businessOwner", "Business owner"],
-                ["maintainer", "Technical maintainer"],
-                ["intendedUse", "Intended use"],
-              ] as const
-            ).map(([key, label]) => (
-              <label key={key}>
-                {label}
-                <input
-                  value={d[key]}
-                  onChange={(e) => update({ [key]: e.target.value })}
-                  required
-                />
-              </label>
-            ))}
-            <label>
-              Domain
-              <input value="Group Orders" readOnly />
-            </label>
-          </div>
+          <>
+            <div className="builder-form">{fields.map(input)}</div>
+            <details>
+              <summary>Identifier and technical ownership</summary>
+              <div className="builder-form">
+                {technicalFields.map(input)}
+                <label>
+                  Domain
+                  <input value="Group Orders" readOnly />
+                </label>
+              </div>
+            </details>
+            {definitionIncomplete && (
+              <p className="error" role="alert">
+                Complete the definition and technical ownership before
+                continuing.
+              </p>
+            )}
+          </>
         )}
         {step === 1 && (
           <>
@@ -98,57 +136,16 @@ export function Author({
                   value={d.source}
                   onChange={(e) => update({ source: e.target.value })}
                 >
-                  {assets.map((a) => (
-                    <option
-                      key={a.id}
-                      value={a.id}
-                      disabled={a.type !== "product"}
-                    >
-                      {a.id}
-                      {a.type !== "product" ? " · incompatible source" : ""}
-                    </option>
-                  ))}
+                  {assets
+                    .filter(
+                      (a) => a.type === "product" && a.status === "Certified",
+                    )
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.id} · certified
+                      </option>
+                    ))}
                 </select>
-              </label>
-              <label>
-                Numerator field
-                <select
-                  value={d.numerator}
-                  onChange={(e) => update({ numerator: e.target.value })}
-                >
-                  <option
-                    value={
-                      d.kind === "completion" ? "completed" : "payment_failed"
-                    }
-                  >
-                    {d.kind === "completion"
-                      ? "completed — confirmed order exists"
-                      : "payment_failed — declined payment exists"}
-                  </option>
-                  <option value="order_completed">
-                    order_completed — legacy reference (missing)
-                  </option>
-                </select>
-              </label>
-              <label>
-                Denominator eligibility{" "}
-                <Help label="About denominator eligibility">
-                  All created fixture groups are eligible. Excluding groups
-                  without an order would bias the denominator.
-                </Help>
-                <input value="eligible = true" readOnly />
-              </label>
-              <label>
-                Distinct entity grain{" "}
-                <Help label="About entity grain">
-                  The unit counted once. Group IDs exist before submission;
-                  order IDs alone do not prove a confirmed order.
-                </Help>
-                <input value={d.grain} readOnly />
-              </label>
-              <label>
-                Event-time field
-                <input value={d.timeField} readOnly />
               </label>
               <label>
                 Creation cohort
@@ -158,29 +155,70 @@ export function Author({
                     update({ window: e.target.value as Draft["window"] })
                   }
                 >
-                  <option value="recent">October 15–28, 2026</option>
-                  <option value="previous">October 1–14, 2026</option>
-                  <option value="all">October 1–28, 2026</option>
+                  {Object.entries(periodLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
+            <p className="builder-formula">{calculationText(d)}</p>
+            {d.numerator !==
+              (d.kind === "completion" ? "completed" : "payment_failed") && (
+              <p className="error" role="alert">
+                Missing numerator field: {d.numerator}. Correct it in Validation
+                & Publishing.
+              </p>
+            )}
             <details>
               <summary>Calculation semantics and source schema</summary>
+              <div className="builder-form">
+                <label>
+                  Numerator field
+                  <input value={d.numerator} readOnly />
+                </label>
+                <div>
+                  <label htmlFor="denominator-eligibility">
+                    Denominator eligibility
+                  </label>
+                  <Help label="About denominator eligibility">
+                    All created fixture groups are eligible. Excluding groups
+                    without an order would bias the denominator.
+                  </Help>
+                  <input
+                    id="denominator-eligibility"
+                    value="eligible = true"
+                    readOnly
+                  />
+                </div>
+                <div>
+                  <label htmlFor="entity-grain">Distinct entity grain</label>
+                  <Help label="About entity grain">
+                    The unit counted once. Group IDs exist before submission;
+                    order IDs alone do not prove a confirmed order.
+                  </Help>
+                  <input id="entity-grain" value={d.grain} readOnly />
+                </div>
+                <label>
+                  Event-time field
+                  <input value={d.timeField} readOnly />
+                </label>
+              </div>
               <p>
-                Distinct matching eligible groups ÷ distinct started eligible
-                groups × 100. Cohort boundaries use UTC creation time, start
-                inclusive and end exclusive. Null entity IDs and ineligible rows
-                are excluded; unknown dimension values form an Unknown group. An
-                empty denominator returns null, never NaN.
+                Distinct eligible groups; UTC creation time, start inclusive and
+                end exclusive. Null group IDs and ineligible rows are excluded.
+                Unknown dimensions form an Unknown group; an empty denominator
+                returns null.
               </p>
               <p>
-                group_id: string · completed / eligible: boolean · created_at:
-                timestamp · payment_method / app_version / period: string
+                group_id: string · completed / payment_failed / eligible:
+                boolean · created_at: timestamp · payment_method / app_version /
+                period: string
               </p>
               <p>
                 Raw producers → group_orders modeled join → metric contract.
-                Data is terminal cohort data; this is not a live conversion
-                attribution model.
+                Terminal cohort data; no live conversion attribution.
               </p>
             </details>
           </>
@@ -188,7 +226,7 @@ export function Author({
         {step === 2 && (
           <>
             <fieldset>
-              <legend>Supported dimensions</legend>
+              <legend>Allow consumers to group by</legend>
               {dimensions.map((x) => (
                 <label className="check-label" key={x}>
                   <input
@@ -202,60 +240,40 @@ export function Author({
                       })
                     }
                   />
-                  {x}
+                  {dimensionLabels[x]}
                 </label>
               ))}
-              <p>
-                Market and platform are unavailable in Gather fixtures. Payment
-                method means single / split payment mode.
-              </p>
             </fieldset>
-            <button className="button" onClick={() => setPreview(true)}>
-              Calculate preview
-            </button>
+            <div className="builder-actions">
+              {d.dimensions.length > 1 && (
+                <label>
+                  Preview breakdown
+                  <select
+                    value={selectedBreakdown}
+                    onChange={(e) => {
+                      setBreakdown(e.target.value as Dimension);
+                      setPreview(false);
+                    }}
+                  >
+                    {d.dimensions.map((x) => (
+                      <option key={x} value={x}>
+                        {dimensionLabels[x]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <button className="button" onClick={() => setPreview(true)}>
+                Calculate preview
+              </button>
+            </div>
             {result && (
               <div aria-live="polite">
-                <div className="builder-result">
-                  {result.value === null
-                    ? "No eligible groups"
-                    : result.value.toFixed(2) + "%"}
-                </div>
-                <p>
-                  {result.numerator} matching / {result.denominator} eligible ·
-                  distinct {result.grain} · {result.period} UTC creation cohort
-                </p>
-                <div className="builder-table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>{d.dimensions[0] || "Group"}</th>
-                        <th>
-                          {d.kind === "failure"
-                            ? "Groups with declined payment"
-                            : "Completed"}
-                        </th>
-                        <th>Eligible</th>
-                        <th>Rate</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.groups.map((g) => (
-                        <tr key={g.dimension}>
-                          <td>{g.dimension}</td>
-                          <td>{g.numerator}</td>
-                          <td>{g.denominator}</td>
-                          <td>
-                            {g.value === null ? "—" : g.value.toFixed(2) + "%"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p>
-                  Preview groups by the first selected dimension. All selected
-                  dimensions become queryable after publication.
-                </p>
+                <Results
+                  result={result}
+                  definition={d}
+                  dimension={selectedBreakdown}
+                />
               </div>
             )}
             {error && (
@@ -272,26 +290,25 @@ export function Author({
               Previous
             </button>
           )}
-          {step < 2 && (
+          {step < 2 ? (
             <button
               className="button primary"
+              disabled={step === 0 && definitionIncomplete}
               onClick={() => setStep(step + 1)}
             >
               Continue
             </button>
+          ) : (
+            <button className="button primary" onClick={next}>
+              Validate draft
+            </button>
           )}
-          <button className="button" onClick={() => setSaved(true)}>
-            Save draft
-          </button>
-          <button className="button primary" onClick={next}>
-            Validate draft
-          </button>
+          {step < 2 && (
+            <button className="button" onClick={next}>
+              Validate draft
+            </button>
+          )}
         </div>
-        <p role="status">
-          {saved
-            ? "Draft saved for this app session. Refresh starts a fresh demo."
-            : ""}
-        </p>
         {issues.length > 0 && (
           <p className="error">
             {issues.length} blocking check{issues.length === 1 ? "" : "s"}{" "}

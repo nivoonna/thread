@@ -1,3 +1,4 @@
+import { investigationFilters } from "./builder/investigation";
 import {
   WorkspaceSwitcher,
   type Workspace,
@@ -425,7 +426,12 @@ export default function App() {
             <Builder
               view={route.builderView}
               go={(builderView) => navigate({ builderView })}
-              investigate={() => navigate({ page: "journey" })}
+              investigate={(cohort) =>
+                navigate({
+                  page: "journey",
+                  filters: investigationFilters(cohort),
+                })
+              }
             />
           </div>
           <div hidden={route.page !== "overview"}>

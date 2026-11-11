@@ -52,16 +52,11 @@
 .builder-intro .button {
   margin-top: 12px;
 }
-.builder-stats,
 .builder-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 32px;
   margin: 16px 0 28px;
-}
-.builder-stats dd {
-  font-size: 25px;
-  margin: 8px 0;
 }
 .builder-meta dd {
   margin: 8px 0;
@@ -269,7 +264,6 @@
   .builder-panel {
     padding: 16px;
   }
-  .builder-stats,
   .builder-meta {
     gap: 20px;
   }
@@ -324,4 +318,46 @@
 }
 .builder-grid {
   align-items: start;
+}
+
+.builder-caption {
+  color: var(--muted);
+  font-size: 12px;
+}
+.builder-formula {
+  padding: 18px 0;
+  font-weight: 500;
+}
+.builder-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.builder-form > div > input {
+  width: 100%;
+  margin-top: 7px;
+}
+.builder-intro > p {
+  max-width: 850px;
+}
+.builder .builder-heading .builder-actions {
+  margin-top: 0;
+}
+.builder fieldset {
+  border: 0;
+  padding: 0;
+}
+.builder legend {
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.builder .check-label {
+  margin: 12px 0;
+}
+.builder .builder-actions {
+  align-items: end;
+}
+
+.builder-grid > .builder-panel {
+  min-width: 0;
 }
