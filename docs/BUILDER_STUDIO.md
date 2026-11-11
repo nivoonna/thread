@@ -1,68 +1,67 @@
 # Builder Studio: demo and technical guide
 
-Builder Studio extends Thread's existing investigation app with a local governed measurement workflow. It does not replace Gather, introduce a backend, deploy a Grab integration, or claim enterprise security.
+Builder Studio extends Thread with a local governed measurement workflow: discover trusted data, define a metric, validate and publish a version, then reuse it across consumers and investigate the underlying cohort. Gather remains the fictional marketplace. GrabFood Group Payments v2 is an illustrative scenario.
 
-## Walkthrough (designed for approximately three minutes)
+## Walkthrough (approximately three minutes)
 
-Start a fresh app session with `npm run dev` or `npm run build && npm run preview`. Open `/thread/#page=builder&builderView=overview`. No setup or sign-in is required beyond the existing development dependencies.
+Start a fresh session at `/thread/#page=builder&builderView=overview`. No credentials or services are needed. Use the arrow beside Gather to switch workspaces.
 
-1. Choose **Find Group Orders data**, search for `group_orders`, and open the modeled product. Inspect schema, ownership, lineage and the certified reuse notice.
-2. Choose **Create metric**. Keep the default completion definition and owners. Continue through source/calculation and dimensions; choose **Calculate preview**. The recent cohort is 468 confirmed / 755 eligible groups, approximately 61.99%, calculated from the existing fixtures.
-3. Choose **Validate draft**, **Test legacy field reference**, then **Run validation**. The missing `order_completed` field genuinely blocks publishing.
-4. Choose **Use completed field**, rerun validation and publish v2. A warning transparently identifies simulated approval. The required checks pass against the corrected definition.
-5. Choose **Query published metric**, select v2, and **Run Query**. Inspect counts, unit, grain, UTC boundaries, quality, source IDs and stable query timestamp. Copy request/response. The three existing consumer examples remain pinned to v1.
-6. Choose **Investigate in Thread**. Journey Analysis opens with the existing investigation filters and selected session context preserved. This is an aggregate journey handoff; no per-session attribution is claimed.
+1. **Find Group Orders data** opens Data Catalog. Inspect `group_orders`; ownership, schema and lineage are available on demand. **Use existing metric** reuses the certified contract immediately.
+2. For the authoring path, choose **Create new version**. Keep or edit the definition and ownership. Continue to source/calculation, choose a UTC creation cohort, and continue to dimensions/preview. **Calculate preview** uses the shared fixture service: the recent cohort is 468 confirmed / 755 eligible groups (61.99%). All October is 1,021 / 1,500 (68.07%).
+3. **Validate draft → Run validation** checks the actual definition and dependencies. To demonstrate a recoverable failure, expand **Demo checks → Test legacy field reference → Run validation**. The missing `order_completed` field blocks publishing. **Use completed field → Run validation** corrects the reference and verifies it. Optional error demonstrations stay outside the ordinary workflow.
+4. Review change impact against the draft’s actual base version. **Publish version** creates an immutable v2 snapshot. The screen retains its Published state until an explicit edit starts a draft.
+5. **Query published metric → Run Query** selects exactly that identity, version and definition’s default cohort. Inspect the result and grouped counts. Expand **Request and response** for the copyable local API contract; expand the developer quickstart or consumer examples only if useful.
+6. **Investigate this cohort** opens Journey Analysis with the query’s period and payment mode. Size and outcome are unrestricted to match the metric population. Existing replay/session/timeline context is retained without claiming that a particular session caused the aggregate result.
 
-Alternative reuse: Catalog → `group_order_completion_rate` → **Use existing metric**. Alternative revision: Validation & Publishing → **New draft from v1** → change the creation cohort → review impact → validate/publish v2. Deprecation discourages new use while retaining queries for pinned integrations.
+The normal flow has valid version and dimension options only. API error demonstrations (missing version, unsupported dimension, simulated unauthorized access) live under **Demo checks** and execute against the real local query service. A normal **Run Query** recovers from a demonstrated error once access is enabled.
 
-The automated golden path completes these actions from a clean browser context. The approximately three-minute duration is a walkthrough target, not a measured human usability study.
+The approximately three-minute duration is a walkthrough target, not a measured usability study.
 
-## Workspace navigation
+## What each view does
 
-Use the small arrow beside the Gather workspace name to choose **Investigate** or **Builder Studio**. Each choice opens that workspace's Overview. The Thread brand link also returns to the active workspace's Overview.
+- **Overview:** explains Builder Studio, directs the visitor to Group Orders data, lists published metrics and shows an active draft only after real edits.
+- **Data Catalog:** searches and filters common asset metadata; reveals source schema, ownership, lineage, consumers and existing definitions. Reuse is primary; revisions are clearly labelled.
+- **Metric Builder:** edits one session draft through definition, calculation and preview. Advanced ownership and calculation semantics are expandable. Supported dimensions become queryable; a separate preview selector makes the displayed breakdown explicit.
+- **Validation & Publishing:** shows blockers and warnings, with passed checks expandable; publishes snapshots, compares proposed changes with the base version and lists pinned consumers. Version history supports editing older versions and confirmed deprecation.
+- **API Playground:** selects a published contract, queries a cohort and shows readable results. Technical request/response, documentation, pinned consumer examples and error checks are expandable.
 
-- Investigate shows only its original Overview, Journey Analysis and Investigation Studio navigation.
-- Builder Studio shows only Overview, Data Catalog, Metric Builder, Validation & Publishing and API Playground. Its navigation lives in the sidebar; the duplicate top-level tab row is removed. The authoring steps remain within Metric Builder.
-- Compact layouts show the same workspace selector above the content and keep only the active workspace's icons in the sidebar.
-- Switching workspaces retains the in-memory draft and investigation filters/session context. Existing `page=studio` deep links retain their meaning; Builder routes remain `page=builder&builderView=...` under `/thread/`. Refresh and browser history reconstruct the active workspace from the URL.
-- **Investigate in Thread** is an explicit handoff to Journey Analysis and changes to the Investigate sidebar. It does not invent session-level metric attribution.
+## Workspace and route compatibility
 
-The workspace revision passed 33 unit tests and 27 browser tests locally, including isolated menus, landing pages, keyboard switching, the supplied deep link, refresh/history, draft retention and 820px/390px overflow checks. CI captures `workspace-builder-desktop.png`, `workspace-builder-820.png` and `workspace-builder-390.png` under browser evidence. This revision is part of open PR #3 and is not deployed at this review point.
+Investigate retains its Overview, Journey Analysis and Investigation Studio. Builder has its own five-item sidebar and landing page. The brand link returns to the active workspace’s Overview; compact layouts use the same workspace selector above content.
 
-## Boundaries
+Existing `page=studio` links still mean Investigation Studio. Builder uses `page=builder&builderView=overview|catalog|metric|validation|api`, under the existing `/thread/` base. Workspace switching preserves draft and investigation context. Refresh and browser history reconstruct workspace navigation from the URL; refresh resets in-memory demo publications.
 
-- `src/builder/models.ts`: assets, draft and version contracts, query options, validation results and consumers.
-- `src/builder/fixtures.ts`: deterministic modeled rows, source metadata and pinned consumer metadata. Existing `src/data.ts` is unchanged.
-- `src/builder/services.ts`: discovery, dependency validation, calculation, publication, immutable snapshots, lifecycle transitions, change impact and local query service.
-- `Builder.tsx`, `Author.tsx`, `Governance.tsx`, `Playground.tsx`: five connected views and app-session state. `Help.tsx` supplies hover/focus/tap help with Escape dismissal and a portal to avoid clipping.
-- `src/App.tsx`: narrow workspace/hash-route integration. Existing page names, investigation state and Pages base are preserved.
+Only the explicit **Investigate this cohort** handoff updates investigation filters to match the query. It preserves selected session, event, moment and other route context. It makes no session-level attribution claim.
 
-Creation cohorts use UTC, inclusive start and exclusive end. All fixture groups are eligible terminal cohorts, counted once by `group_id`. Completion requires an independently confirmed order; an order correlation ID alone never establishes completion. Payment Failure Rate counts eligible groups with a declined payment, not failed attempts divided by attempted payments. Payment method means single/split payment mode. Group release is exposed as app version. Market/platform are intentionally unavailable.
+## Models, calculations and lifecycle
 
-Preview, published queries, dashboard and structured AI evidence use the same calculation service and data. AI output is structured fixture evidence, without an LLM call. Query timestamps and source-health evaluation use October 29, 2026 as the stable demo clock. Quality metadata describes synthetic fixture contracts, not live monitoring.
+- `src/builder/models.ts`: assets, drafts, immutable version references, dimensions, queries and consumers.
+- `fixtures.ts`: modeled rows derived from existing `src/data.ts` groups/orders/payments, source metadata and explicit consumer pins.
+- `services.ts`: discovery, validation, calculation, publication, lifecycle, version selection, change impact and local queries.
+- `investigation.ts`: query-cohort to existing investigation-filter mapping.
+- `Builder.tsx`, `Author.tsx`, `Governance.tsx`, `Playground.tsx`: the five views and app-session state. `Results.tsx` shares readable preview/query output; `labels.ts` shares calculation and field labels. `Help.tsx` supports hover, focus, tap and Escape via a portal.
+- `src/App.tsx`: narrow hash-route/workspace integration; existing data, deployment configuration and investigation views remain intact.
 
-A draft is editable and becomes Validated only after blocking checks pass. Publish revalidates and creates an immutable snapshot. Editing requires explicit version ancestry for an existing identifier; a different identifier starts a separate contract. Edits invalidate validation. Deprecation preserves the original definition. Existing consumers never automatically move to a new version.
+Creation cohorts use UTC, inclusive start and exclusive end. All fixture groups are eligible terminal cohorts, counted once by `group_id`. Completion requires an independently confirmed order, not merely an order correlation ID. Payment Failure Rate counts eligible groups with a declined payment, not failed attempts divided by payment attempts. The wire dimension `payment_method` means single/split payment mode. App version is the existing group release. Market and platform are unavailable.
 
-State is deliberately in memory. Workspace switching retains drafts and versions; refresh resets them to seeded v1 metrics. No browser storage is read, so empty/corrupt storage cannot break initialization. There is no real persistence, service identity, authorization boundary, live endpoint or approval system.
+Preview, published queries and consumer examples use one calculation service and dataset. Examples are filtered to the selected metric and use the same cohort/payment filters while retaining their explicit version pins. The AI example contains structured evidence without an LLM call. Query timestamps and quality evaluation use the stable October 29, 2026 demo clock; quality metadata is synthetic, not live monitoring.
 
-## Verification and review history
+Edits invalidate validation. Publishing rechecks all blockers and snapshots the definition. Revising an existing identity requires an explicit base version. Published definitions never change; later versions never upgrade consumer pins automatically. Adding supported dimensions is compatible; removing dimensions or changing calculation/time semantics is flagged as potentially breaking. Change impact always compares the exact base version, including v1 after v2 exists.
 
-The original baseline at `3802f8b` passed 15 unit tests, 10 browser tests and the production build. The initial Builder implementation increased coverage to 27 unit / 13 browser tests. PR #2 then passed 30 unit / 17 browser tests and was deployed as `1d0d0ae`. All 17 browser tests also passed against the live site.
+Discovery and new queries prefer the newest active Published version. Explicitly selected Deprecated versions remain queryable with a warning. Deprecation requires confirmation and discourages new use; it preserves the definition and historical pins.
 
-The UX fixes in open PR #3 pass 33 unit tests and 22 browser tests in the cloud checkout and GitHub validation, plus production build, standalone TypeScript, formatting and whitespace checks. They protect edited drafts before replacement, hide excluded catalog details/actions and fix first-tap help while retaining hover/keyboard behavior. The naming/documentation update is part of the same review PR and requests fresh validation. PR #3 is not deployed at this update.
+## State and limitations
 
-New regression cases were run against pre-fix builds to reproduce the defects before correction. Coverage includes publication-to-query identity/version handoff, v1 edits after v2 publication with pinned consumers, Payment Failure Rate labels, draft preservation/explicit discard, filtered asset details, catalog links and touch/keyboard help. Existing investigation coverage protects journey/funnel analysis, comparisons/segments, filters, session identifiers, replay/autoplay, evidence/brief navigation, refresh, history and narrow layouts.
+One draft is saved automatically for the current app session. Starting another from the catalog or history prompts only if unpublished changes would be replaced. Continue, dismiss with Escape, or explicitly discard. Untouched and just-published definitions do not create a false “needs attention” item.
 
-No lint task is configured. Browser evidence is emitted under ignored `test-results/` and uploaded by PR CI as `browser-evidence`. Browser verification uses Chromium with desktop/tablet layouts and emulated touch; it is not a complete cross-browser or screen-reader audit.
+All state is in memory. Refresh starts a clean demo with seeded v1 metrics; no browser storage is read. There is no persistence, live API endpoint, enterprise identity, authorization boundary, approval service, Grab integration or production monitoring. Permission and approval checks are clearly labelled local simulations.
 
-## Draft safety and catalog navigation
+## Verification
 
-The app maintains one active draft in memory. Starting another draft from the catalog or version history prompts only when the active definition has unpublished changes. Continue the current draft, dismiss with Escape, or explicitly discard it and start the requested one. Untouched and just-published snapshots add no prompt to the normal demo. Refresh still resets app-session data; there is no multi-draft collection or persistent storage.
+Run `npm test`, `npm run build` (includes TypeScript) and `npm run test:e2e`. There is no lint task. Browser tests serve the production output at `/thread/`, including direct routes, refresh, history, keyboard/help interaction and desktop/tablet/mobile overflow checks. Screenshots are written under ignored `test-results/` and uploaded by PR CI as `browser-evidence`.
 
-Asset details and actions appear only while the selected asset matches the current search/type/domain/status filters. Clearing filters restores that selection. Explicit source/reuse links clear incompatible filters to keep their destination visible.
+The suite covers the full publish/query/investigate path, genuine validation failure/recovery, exact metric/version handoff, older-version impact and consumer pins, deprecation, draft replacement safety, catalog filtering, accessible form controls and query-cohort consistency. Existing regression coverage protects landing, journey/funnel analysis, comparisons/segments, filters, sessions, replay/autoplay, evidence/brief links and navigation history.
 
-## Releases and GitHub terminology
+Chromium and emulated touch checks do not constitute a complete cross-browser or screen-reader audit. A passing cloud build does not prove the live release changed: a PR must be reviewed, merged and successfully deployed separately. Builder’s **Publish version** changes only local metric state.
 
-[PR #1](https://github.com/nivoonna/thread/pull/1) added Builder Studio. [PR #2](https://github.com/nivoonna/thread/pull/2) fixed metric/version navigation, base-version impact and failure labels; both are included in the live `1d0d0ae` release. [PR #3](https://github.com/nivoonna/thread/pull/3) contains the later UX fixes and GitHub documentation improvements for review.
-
-A merged PR changes main; a successful GitHub Pages deployment publishes website code. Builder's **Publish version** action only snapshots a metric in the current simulated session. See [the GitHub guide](GITHUB_GUIDE.md) for readable workflow names, status meanings, release verification and the original incremental commit history.
+See [the GitHub guide](GITHUB_GUIDE.md) for workflow names, status meanings and the original incremental development history.
