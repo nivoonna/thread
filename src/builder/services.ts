@@ -216,6 +216,19 @@ export function deprecate(v: Version, permission = true): Version {
   if (!permission || v.state !== "Published") throw Error("INVALID_TRANSITION");
   return Object.freeze({ ...v, state: "Deprecated" });
 }
+export function hasDraftChanges(
+  draft: Draft,
+  versions: readonly Version[],
+): boolean {
+  const base = versions.find(
+    (v) => v.definition.id === draft.id && v.version === draft.baseVersion,
+  );
+  if (!base) return true;
+  return (Object.keys(base.definition) as (keyof Definition)[]).some(
+    (key) =>
+      JSON.stringify(draft[key]) !== JSON.stringify(base.definition[key]),
+  );
+}
 export function draftImpact(
   draft: Draft,
   versions: readonly Version[],

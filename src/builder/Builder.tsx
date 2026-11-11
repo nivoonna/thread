@@ -1,3 +1,4 @@
+import { Modal } from "../components/Shared";
 import { Help } from "./Help";
 import { Playground } from "./Playground";
 import { Governance } from "./Governance";
@@ -9,6 +10,7 @@ import {
   consumers,
   initialVersions,
   edit,
+  hasDraftChanges,
   type Asset,
   type Draft,
   type Version,
@@ -41,6 +43,7 @@ export function Builder({
 }) {
   const [versions, setVersions] = useState<Version[]>(initialVersions),
     [draft, setDraft] = useState<Draft>(() => edit(versions[0])),
+    [pendingDraft, setPendingDraft] = useState<Draft>(),
     [querySelection, setQuerySelection] = useState<MetricReference>(),
     [selected, setSelected] = useState("group_orders"),
     [search, setSearch] = useState(""),
@@ -49,7 +52,7 @@ export function Builder({
     [status, setStatus] = useState("");
   const list = catalog(versions, search, type, domain, status),
     all = catalog(versions),
-    asset = all.find((a) => a.id === selected),
+    asset = list.find((a) => a.id === selected),
     contract = versions.filter((v) => v.definition.id === selected).at(-1);
   function openQuery(version: Version) {
     setQuerySelection({
@@ -58,8 +61,23 @@ export function Builder({
     });
     go("api");
   }
+  function openAsset(id: string) {
+    setSelected(id);
+    setSearch("");
+    setType("");
+    setDomain("");
+    setStatus("");
+  }
+  function requestDraft(next: Draft) {
+    if (hasDraftChanges(draft, versions)) {
+      setPendingDraft(next);
+    } else {
+      setDraft(next);
+      go("metric");
+    }
+  }
   function create(a: Asset) {
-    setDraft({
+    requestDraft({
       ...edit(
         versions
           .filter((v) => v.definition.id === "group_order_completion_rate")
@@ -67,10 +85,39 @@ export function Builder({
       ),
       source: a.id,
     });
-    go("metric");
   }
   return (
     <section className="builder" aria-label="Builder Studio">
+      <Modal
+        open={!!pendingDraft}
+        onClose={() => setPendingDraft(undefined)}
+        title="Keep or replace your draft?"
+        description={`${draft.name || "Untitled metric"} has unpublished changes saved for this session. Starting a new draft will discard them.`}
+      >
+        <div className="builder-actions">
+          <button
+            className="button"
+            onClick={() => {
+              setPendingDraft(undefined);
+              go("metric");
+            }}
+          >
+            Continue current draft
+          </button>
+          <button
+            className="button"
+            onClick={() => {
+              if (pendingDraft) {
+                setDraft(pendingDraft);
+                setPendingDraft(undefined);
+                go("metric");
+              }
+            }}
+          >
+            Discard and start new draft
+          </button>
+        </div>
+      </Modal>
       <header className="builder-heading">
         <div>
           <div className="eyebrow">MEASUREMENT WORKSPACE</div>
@@ -104,7 +151,7 @@ export function Builder({
             <button
               className="button primary"
               onClick={() => {
-                setSelected("group_orders");
+                openAsset("group_orders");
                 go("catalog");
               }}
             >
@@ -146,7 +193,7 @@ export function Builder({
                   className="builder-row"
                   key={v.definition.id + v.version}
                   onClick={() => {
-                    setSelected(v.definition.id);
+                    openAsset(v.definition.id);
                     go("catalog");
                   }}
                 >
@@ -296,7 +343,7 @@ export function Builder({
                 ) : (
                   <button
                     className="button"
-                    onClick={() => setSelected("group_orders")}
+                    onClick={() => openAsset("group_orders")}
                   >
                     Inspect compatible modeled source
                   </button>
@@ -340,7 +387,7 @@ export function Builder({
                   <button
                     className="builder-link"
                     onClick={() => {
-                      setSelected("group_order_completion_rate");
+                      openAsset("group_order_completion_rate");
                     }}
                   >
                     Inspect and reuse it
@@ -420,6 +467,7 @@ export function Builder({
           setVersions={setVersions}
           go={go}
           onQuery={openQuery}
+          onNewDraft={(version) => requestDraft(edit(version))}
         />
       )}
       {view === "api" && (
