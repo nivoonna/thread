@@ -132,11 +132,15 @@ export function Builder({
       {view === "overview" && (
         <>
           <div className="builder-intro">
-            <h2>Build a metric for Group Orders</h2>
+            <h2>What is Builder Studio?</h2>
             <p>
-              Discover a trusted source, define a contract, validate it and
-              query a pinned version.
+              Builder Studio is Thread’s workspace for building and sharing
+              trusted product metrics. It brings data discovery, metric
+              definition, validation and versioned publishing into one flow,
+              helping product, data and engineering teams reuse consistent
+              measurements across dashboards, applications and AI agents.
             </p>
+            <h2>Build a metric for Group Orders</h2>
             <button
               className="button primary"
               onClick={() => {
