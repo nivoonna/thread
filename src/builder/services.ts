@@ -9,6 +9,7 @@ import {
   type Version,
   type Check,
   type Query,
+  type QueryCohort,
 } from "./models";
 
 export function newDraft(): Draft {
@@ -31,6 +32,18 @@ export function newDraft(): Draft {
     state: "Draft",
   };
 }
+/** Prefer an active contract for new use; retain deprecated contracts for explicit compatibility queries. */
+export function preferredVersion(
+  versions: readonly Version[],
+  id: string,
+): Version | undefined {
+  const candidates = versions.filter((v) => v.definition.id === id);
+  const active = candidates.filter((v) => v.state === "Published");
+  return (active.length ? active : candidates).reduce<Version | undefined>(
+    (latest, v) => (!latest || v.version > latest.version ? v : latest),
+    undefined,
+  );
+}
 export function catalog(
   versions: readonly Version[],
   search = "",
@@ -38,23 +51,23 @@ export function catalog(
   domain = "",
   status = "",
 ): Asset[] {
-  const metrics = versions
-    .filter(
-      (v, i, a) =>
-        !a.slice(i + 1).some((x) => x.definition.id === v.definition.id),
-    )
-    .map((v) => ({
-      ...assets[4],
-      id: v.definition.id,
-      type: "metric" as const,
-      owner: v.definition.maintainer,
-      description: v.definition.description,
-      status:
-        v.state === "Published"
-          ? ("Certified" as const)
-          : ("Available" as const),
-      dependencies: [v.definition.source],
-    }));
+  const metrics = [...new Set(versions.map((v) => v.definition.id))].map(
+    (id) => {
+      const v = preferredVersion(versions, id)!;
+      return {
+        ...assets.find((a) => a.id === v.definition.source)!,
+        id,
+        type: "metric" as const,
+        owner: v.definition.maintainer,
+        description: v.definition.description,
+        status:
+          v.state === "Published"
+            ? ("Certified" as const)
+            : ("Deprecated" as const),
+        dependencies: [v.definition.source],
+      };
+    },
+  );
   return [...assets, ...metrics].filter(
     (a) =>
       (a.id + " " + a.description)
@@ -253,7 +266,13 @@ export function impact(old: Version, d: Draft, links = consumers) {
   ).filter((k) => JSON.stringify(old.definition[k]) !== JSON.stringify(d[k]));
   return {
     changed,
-    breaking: changed.length > 0,
+    breaking: changed.some(
+      (key) =>
+        key !== "dimensions" ||
+        old.definition.dimensions.some(
+          (dimension) => !d.dimensions.includes(dimension),
+        ),
+    ),
     consumers: links.filter(
       (c) => c.metric === old.definition.id && c.version === old.version,
     ),
@@ -369,4 +388,29 @@ export function initialVersions(): Version[] {
     publish(validated(newDraft(), []), []),
     publish(validated(failure, []), []),
   ];
+}
+
+/** Consumer examples retain their pinned definitions while sharing the query's cohort. */
+export function consumerResults(
+  versions: readonly Version[],
+  metricId: string,
+  cohort: QueryCohort,
+  links = consumers,
+) {
+  return links
+    .filter((consumer) => consumer.metric === metricId)
+    .map((consumer) => {
+      try {
+        return {
+          consumer,
+          response: query(versions, consumer.metric, consumer.version, {
+            window: cohort.window,
+            payment: cohort.payment,
+          }),
+          error: null,
+        };
+      } catch (error) {
+        return { consumer, response: null, error: (error as Error).message };
+      }
+    });
 }

@@ -17,7 +17,7 @@ export interface Asset {
   type: "event" | "dataset" | "product" | "metric";
   domain: string;
   owner: string;
-  status: "Certified" | "Available";
+  status: "Certified" | "Available" | "Deprecated";
   description: string;
   fields: Record<string, string>;
   dependencies: string[];
@@ -78,4 +78,9 @@ export interface Query {
 export interface MetricReference {
   metricId: string;
   version: number;
+}
+
+export interface QueryCohort {
+  window: Definition["window"];
+  payment: "all" | "single" | "split";
 }
