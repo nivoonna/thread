@@ -134,8 +134,11 @@ export function Builder({
           <div className="builder-intro">
             <h2>Build a metric for Group Orders</h2>
             <p>
-              Discover a trusted source, define a contract, validate it and
-              query a pinned version.
+              Builder Studio is where teams turn shared data into trusted,
+              reusable metrics. Define a measurement once, validate it, and
+              publish a version for dashboards, applications and AI agents to
+              use consistently. This demo connects those measurements to
+              customer journeys in Thread.
             </p>
             <button
               className="button primary"
