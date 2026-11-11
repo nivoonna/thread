@@ -1,3 +1,4 @@
+import { Builder, views, type View } from "./builder/Builder";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -24,6 +25,7 @@ import type { Evidence } from "./investigator";
 type Page = "overview" | "journey" | "studio" | "builder";
 interface RouteState {
   page: Page;
+  builderView: View;
   filters: Filters;
   sessionId: string;
   event: number;
@@ -61,6 +63,7 @@ function readRoute(): RouteState {
     fallback: T,
   ): T => (values.includes(p.get(key) as T) ? (p.get(key) as T) : fallback);
   return {
+    builderView: valid("builderView", views, "overview"),
     page: valid("page", ["overview", "journey", "studio", "builder"], "overview"),
     filters: {
       size: valid("size", ["all", "small", "large"], "all"),
@@ -121,6 +124,7 @@ export default function App() {
     setRoute(next);
     const params = new URLSearchParams({
       page: next.page,
+      ...(next.page === "builder" ? { builderView: next.builderView } : {}),
       ...next.filters,
       session: next.sessionId,
       event: String(next.event),
@@ -341,7 +345,7 @@ export default function App() {
           </div>
         </header>
         <main id="main-content" tabIndex={-1}>
-          {route.page === "builder" && <section className="builder"><h1>Builder Studio</h1><p>Measurement workspace · implementation in progress</p></section>}
+          {route.page === "builder" && <Builder view={route.builderView} go={(builderView) => navigate({builderView})} investigate={() => navigate({page:"journey"})} />}
           <div hidden={route.page !== "overview"}>
             <Overview
               onInvestigate={() =>
