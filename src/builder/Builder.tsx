@@ -25,7 +25,7 @@ export const views = [
   "api",
 ] as const;
 export type View = (typeof views)[number];
-const labels: Record<View, string> = {
+export const builderLabels: Record<View, string> = {
   overview: "Overview",
   catalog: "Data Catalog",
   metric: "Metric Builder",
@@ -121,7 +121,7 @@ export function Builder({
       <header className="builder-heading">
         <div>
           <div className="eyebrow">MEASUREMENT WORKSPACE</div>
-          <h1>{labels[view]}</h1>
+          <h1>{builderLabels[view]}</h1>
           <p>
             Gather synthetic data · GrabFood Group Payments v2 is an
             illustrative use case.
@@ -129,17 +129,6 @@ export function Builder({
         </div>
         <span>Local simulation</span>
       </header>
-      <nav className="builder-tabs" aria-label="Builder navigation">
-        {views.map((v) => (
-          <button
-            key={v}
-            aria-current={view === v ? "page" : undefined}
-            onClick={() => go(v)}
-          >
-            {labels[v]}
-          </button>
-        ))}
-      </nav>
       {view === "overview" && (
         <>
           <div className="builder-intro">

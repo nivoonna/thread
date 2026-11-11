@@ -46,7 +46,7 @@ All 1,500 groups are synthetic and reproducible. Twenty-three sessions cover eve
 
 **Builder Studio**
 
-Switch from **Investigate** to **Builder Studio** to discover data products, author a governed metric, recover a real schema validation failure, publish an immutable version and query it locally. Existing `page=studio` links still open Investigation Studio; Builder uses `#page=builder&builderView=overview` under the same `/thread/` base.
+Use the arrow beside the Gather workspace name to choose **Investigate** or **Builder Studio**. Switching opens that workspace’s landing page and shows only its own sidebar. In Builder Studio, discover data products, author a governed metric, recover a real schema validation failure, publish an immutable version and query it locally. Existing `page=studio` links still open Investigation Studio; Builder uses `#page=builder&builderView=overview` under the same `/thread/` base.
 
 Demo: **Data Catalog → group_orders → Create metric → Continue twice → Calculate preview → Validate draft → Test legacy field reference → Run validation → Use completed field → Run validation → Publish version → Query published metric → Run Query → Investigate in Thread**. The seeded completion metric is already certified: reuse v1 or publish your revision as v2. Consumers stay pinned to v1.
 

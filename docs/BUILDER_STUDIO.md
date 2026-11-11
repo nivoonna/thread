@@ -17,6 +17,18 @@ Alternative reuse: Catalog → `group_order_completion_rate` → **Use existing 
 
 The automated golden path completes these actions from a clean browser context. The approximately three-minute duration is a walkthrough target, not a measured human usability study.
 
+## Workspace navigation
+
+Use the small arrow beside the Gather workspace name to choose **Investigate** or **Builder Studio**. Each choice opens that workspace's Overview. The Thread brand link also returns to the active workspace's Overview.
+
+- Investigate shows only its original Overview, Journey Analysis and Investigation Studio navigation.
+- Builder Studio shows only Overview, Data Catalog, Metric Builder, Validation & Publishing and API Playground. Its navigation lives in the sidebar; the duplicate top-level tab row is removed. The authoring steps remain within Metric Builder.
+- Compact layouts show the same workspace selector above the content and keep only the active workspace's icons in the sidebar.
+- Switching workspaces retains the in-memory draft and investigation filters/session context. Existing `page=studio` deep links retain their meaning; Builder routes remain `page=builder&builderView=...` under `/thread/`. Refresh and browser history reconstruct the active workspace from the URL.
+- **Investigate in Thread** is an explicit handoff to Journey Analysis and changes to the Investigate sidebar. It does not invent session-level metric attribution.
+
+The workspace revision passed 33 unit tests and 27 browser tests locally, including isolated menus, landing pages, keyboard switching, the supplied deep link, refresh/history, draft retention and 820px/390px overflow checks. CI captures `workspace-builder-desktop.png`, `workspace-builder-820.png` and `workspace-builder-390.png` under browser evidence. This revision is part of open PR #3 and is not deployed at this review point.
+
 ## Boundaries
 
 - `src/builder/models.ts`: assets, draft and version contracts, query options, validation results and consumers.
