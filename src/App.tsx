@@ -64,7 +64,11 @@ function readRoute(): RouteState {
   ): T => (values.includes(p.get(key) as T) ? (p.get(key) as T) : fallback);
   return {
     builderView: valid("builderView", views, "overview"),
-    page: valid("page", ["overview", "journey", "studio", "builder"], "overview"),
+    page: valid(
+      "page",
+      ["overview", "journey", "studio", "builder"],
+      "overview",
+    ),
     filters: {
       size: valid("size", ["all", "small", "large"], "all"),
       payment: valid("payment", ["all", "single", "split"], "all"),
@@ -265,7 +269,22 @@ export default function App() {
           </div>
           <span className="workspace-badge">DEMO</span>
         </div>
-        <div className="workspace-switch" aria-label="Workspace switcher"><button className="button" aria-pressed={route.page !== "builder"} onClick={() => navigate({ page: previousInvestigation.current })}>Investigate</button><button className="button" aria-pressed={route.page === "builder"} onClick={() => navigate({ page: "builder" })}>Builder Studio</button></div>
+        <div className="workspace-switch" aria-label="Workspace switcher">
+          <button
+            className="button"
+            aria-pressed={route.page !== "builder"}
+            onClick={() => navigate({ page: previousInvestigation.current })}
+          >
+            Investigate
+          </button>
+          <button
+            className="button"
+            aria-pressed={route.page === "builder"}
+            onClick={() => navigate({ page: "builder" })}
+          >
+            Builder Studio
+          </button>
+        </div>
         <div className="nav-label">WORKSPACE</div>
         <nav aria-label="Main navigation">
           {(
@@ -346,8 +365,33 @@ export default function App() {
             <span className="header-avatar">PM</span>
           </div>
         </header>
+        <div
+          className="workspace-switch workspace-switch-mobile"
+          aria-label="Workspace switcher"
+        >
+          <button
+            className="button"
+            aria-pressed={route.page !== "builder"}
+            onClick={() => navigate({ page: previousInvestigation.current })}
+          >
+            Investigate
+          </button>
+          <button
+            className="button"
+            aria-pressed={route.page === "builder"}
+            onClick={() => navigate({ page: "builder" })}
+          >
+            Builder Studio
+          </button>
+        </div>
         <main id="main-content" tabIndex={-1}>
-          <div hidden={route.page !== "builder"}><Builder view={route.builderView} go={(builderView) => navigate({builderView})} investigate={() => navigate({page:"journey"})} /></div>
+          <div hidden={route.page !== "builder"}>
+            <Builder
+              view={route.builderView}
+              go={(builderView) => navigate({ builderView })}
+              investigate={() => navigate({ page: "journey" })}
+            />
+          </div>
           <div hidden={route.page !== "overview"}>
             <Overview
               onInvestigate={() =>
