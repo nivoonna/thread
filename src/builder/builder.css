@@ -49,6 +49,9 @@
 .builder-intro p {
   margin: 8px 0 16px;
 }
+.builder-intro .button {
+  margin-top: 12px;
+}
 .builder-stats,
 .builder-meta {
   display: flex;
