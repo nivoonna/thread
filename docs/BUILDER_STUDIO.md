@@ -1,4 +1,4 @@
-# Builder Studio review guide
+# Builder Studio: demo and technical guide
 
 Builder Studio extends Thread's existing investigation app with a local governed measurement workflow. It does not replace Gather, introduce a backend, deploy a Grab integration, or claim enterprise security.
 
@@ -33,48 +33,24 @@ A draft is editable and becomes Validated only after blocking checks pass. Publi
 
 State is deliberately in memory. Workspace switching retains drafts and versions; refresh resets them to seeded v1 metrics. No browser storage is read, so empty/corrupt storage cannot break initialization. There is no real persistence, service identity, authorization boundary, live endpoint or approval system.
 
-## Verification evidence
+## Verification and review history
 
-Baseline at upstream `3802f8b`: 15 unit tests, 10 browser tests and production build passed. Upstream was checked with `git ls-remote` before development; the checkout was clean. No pre-existing test failure was observed.
+The original baseline at `3802f8b` passed 15 unit tests, 10 browser tests and the production build. The initial Builder implementation increased coverage to 27 unit / 13 browser tests. PR #2 then passed 30 unit / 17 browser tests and was deployed as `1d0d0ae`. All 17 browser tests also passed against the live site.
 
-Executed in the cloud checkout:
+The UX fixes in open PR #3 pass 33 unit tests and 22 browser tests in the cloud checkout and GitHub validation, plus production build, standalone TypeScript, formatting and whitespace checks. They protect edited drafts before replacement, hide excluded catalog details/actions and fix first-tap help while retaining hover/keyboard behavior. The naming/documentation update is part of the same review PR and requests fresh validation. PR #3 is not deployed at this update.
 
-| Command                                             | Actual result                                                         |
-| --------------------------------------------------- | --------------------------------------------------------------------- |
-| `npm test`                                          | 27 tests passed in 4 files                                            |
-| `npm run build`                                     | TypeScript and Vite production build passed, `/thread/` base retained |
-| `npm run test:e2e`                                  | 13 browser tests passed against production preview                    |
-| `npx playwright test tests/browser/builder.spec.ts` | 3 Builder tests passed after final metadata refinements               |
-| `git diff --check`                                  | No whitespace errors                                                  |
+New regression cases were run against pre-fix builds to reproduce the defects before correction. Coverage includes publication-to-query identity/version handoff, v1 edits after v2 publication with pinned consumers, Payment Failure Rate labels, draft preservation/explicit discard, filtered asset details, catalog links and touch/keyboard help. Existing investigation coverage protects journey/funnel analysis, comparisons/segments, filters, session identifiers, replay/autoplay, evidence/brief navigation, refresh, history and narrow layouts.
 
-No lint task is configured; lint was not reported as passed. Browser screenshots are emitted under ignored `test-results/` (`builder-api.png` and `builder-catalog-tablet.png`); PR CI uploads browser evidence as an artifact. Browser verification exercises Chromium, not a complete cross-browser or screen-reader audit.
+No lint task is configured. Browser evidence is emitted under ignored `test-results/` and uploaded by PR CI as `browser-evidence`. Browser verification uses Chromium with desktop/tablet layouts and emulated touch; it is not a complete cross-browser or screen-reader audit.
 
-Coverage includes the golden flow and genuine error recovery; immutable version edits, impact and deprecation; explicit version/unsupported dimension/authorization errors; clipboard controls; all five Builder routes with refresh; history; keyboard help and Escape; desktop/tablet overflow; and existing landing, journey, funnel, segments/comparison, filters, curated sessions, replay, autoplay, evidence/brief navigation and narrow layouts. The supplied `S-1042-0` deep link is exercised, with all investigation parameters asserted after handoff.
+## Draft safety and catalog navigation
 
-Initial browser test attempts exposed an overly strict native-select label locator; it was corrected to its accessible combobox role. A separate overlapping test-run preview-server shutdown was resolved by running suites sequentially. A temporary test-fixture typing error was caught by TypeScript and corrected before commit. No assertions were suppressed or tests skipped.
+The app maintains one active draft in memory. Starting another draft from the catalog or version history prompts only when the active definition has unpublished changes. Continue the current draft, dismiss with Escape, or explicitly discard it and start the requested one. Untouched and just-published snapshots add no prompt to the normal demo. Refresh still resets app-session data; there is no multi-draft collection or persistent storage.
 
-## Release state
+Asset details and actions appear only while the selected asset matches the current search/type/domain/status filters. Clearing filters restores that selection. Explicit source/reuse links clear incompatible filters to keep their destination visible.
 
-Feature branch: `feature/builder-studio`. Logical commits cover workspace, domain, catalog, authoring, governance, consumption, handoff, tests/hardening and documentation. The existing deployment workflow is unchanged; added pull-request CI only validates. Main and the live GitHub Pages deployment are not changed by this feature branch. Local built-output verification is not proof of deployed feature behavior. Review and explicit approval are required before merging or deploying.
+## Releases and GitHub terminology
 
-## Review fixes after PR #1
+[PR #1](https://github.com/nivoonna/thread/pull/1) added Builder Studio. [PR #2](https://github.com/nivoonna/thread/pull/2) fixed metric/version navigation, base-version impact and failure labels; both are included in the live `1d0d0ae` release. [PR #3](https://github.com/nivoonna/thread/pull/3) contains the later UX fixes and GitHub documentation improvements for review.
 
-PR #1 was merged before this review. The follow-up remains on `feature/builder-studio` for review; these fixes do not merge main or trigger deployment.
-
-- Publishing and catalog reuse now hand the API Playground an explicit metric ID and immutable version, independently of catalog selection. Publishing Payment Failure Rate or a new metric identifier opens that exact contract. Query filter defaults remain unchanged.
-- Change impact resolves the draft's metric ID and `baseVersion`. Editing v1 after v2 exists compares against v1 and lists its pinned consumers. Missing ancestry and new identifiers are not silently compared against the latest unrelated version.
-- Payment Failure Rate's preview numerator column reads **Groups with declined payment**; completion keeps **Completed**.
-
-Four browser regressions reproduced the defects on the pre-fix build. They cover stale catalog/query selection, both seeded metrics, a new metric identifier, the exact request/response version, and editing/querying an older base with pinned consumers. Unit coverage also protects base-version resolution, unavailable ancestry and metric identity isolation. Local verification: 30 unit tests and 17 browser tests passed, including all existing investigation regressions; production build, standalone TypeScript, formatting and whitespace checks passed. No lint script exists.
-
-PR #1's GitHub validation was investigated separately: its workflow is active, but the run remains queued with zero jobs/check runs, no error annotations and no available logs. Earlier deployment attempts reported GitHub's internal startup error before any application job. Remote validation is not counted as passed. A follow-up PR requests validation of the fix commit without deploying it.
-
-## UX fixes after the live walkthrough
-
-The live PR #2 release was walked through in Chromium on desktop/tablet and with emulated touch. The main workflow completed correctly with consistent calculations and no console/network errors, but exposed silent draft replacement, stale details in filtered catalogs and a first-tap help defect.
-
-This follow-up protects the single active session draft before either catalog creation or a version-history action replaces it. Only unpublished definition changes trigger the existing accessible modal: continue the current draft, dismiss with Escape, or explicitly discard and start the requested draft. Unchanged and just-published snapshots need no prompt. This adds no persistent storage or multi-draft collection; refresh still starts a clean demo.
-
-Catalog details/actions now appear only when the selected asset matches current search/type/domain/status filters. Clearing filters restores the selection. Explicit links to a modeled source or reusable metric clear incompatible filters, keeping their destination visible. Help separates pointer-induced focus from keyboard focus, opens on the first touch tap, and supports second-tap, outside-tap, blur and Escape dismissal while retaining mouse hover.
-
-Regression evidence: four new browser cases failed against the pre-fix build; the existing hover/focus behavior passed. All five focused cases pass after correction. Unit coverage protects draft change detection across metadata, calculations, lifecycle-only state, older versions and new identifiers. Verification: 33 unit tests, 22 browser tests, production build, standalone TypeScript, formatting and whitespace checks. The changes remain on `feature/builder-studio` for review; they are not merged or deployed by this follow-up.
+A merged PR changes main; a successful GitHub Pages deployment publishes website code. Builder's **Publish version** action only snapshots a metric in the current simulated session. See [the GitHub guide](GITHUB_GUIDE.md) for readable workflow names, status meanings, release verification and the original incremental commit history.

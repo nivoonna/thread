@@ -52,4 +52,12 @@ Demo: **Data Catalog → group_orders → Create metric → Continue twice → C
 
 Builder adds no credentials, network service or dependency. It maps Gather's existing deterministic group/order/payment fixtures; GrabFood Group Payments v2 is illustrative framing, not a deployed integration. Drafts and publications last for the app session; refreshing starts a clean demo. Payment mode, release and period are supported dimensions; market and platform are unavailable. Source quality, approval and permissions are explicitly simulated.
 
-The existing commands above run the combined unit and browser suites. `npm run build` includes TypeScript checking; there is no lint script. Pull-request CI validates without deploying. See [Builder architecture, walkthrough and verification](docs/BUILDER_STUDIO.md).
+The existing commands above run the combined unit and browser suites. `npm run build` includes TypeScript checking; there is no lint script. Pull-request CI validates without deploying. See [Builder Studio: demo and technical guide](docs/BUILDER_STUDIO.md).
+
+**GitHub and releases**
+
+- **Check proposed changes** runs tests and builds an open pull request. It does not publish the site.
+- **Test and publish live Thread site** tests main and publishes it to the [existing Thread link](https://nivoonna.github.io/thread/).
+- A merged PR puts code on main. A successful deployment publishes it. An older red run is a historical failed attempt, not the status of the latest release.
+
+See [GitHub guide: pull requests, checks and live releases](docs/GITHUB_GUIDE.md) for naming, statuses, release verification and the Builder Studio change history.
