@@ -12,6 +12,7 @@ import {
   type Asset,
   type Draft,
   type Version,
+  type MetricReference,
 } from "./domain";
 import "./builder.css";
 export const views = [
@@ -40,6 +41,7 @@ export function Builder({
 }) {
   const [versions, setVersions] = useState<Version[]>(initialVersions),
     [draft, setDraft] = useState<Draft>(() => edit(versions[0])),
+    [querySelection, setQuerySelection] = useState<MetricReference>(),
     [selected, setSelected] = useState("group_orders"),
     [search, setSearch] = useState(""),
     [type, setType] = useState(""),
@@ -49,6 +51,13 @@ export function Builder({
     all = catalog(versions),
     asset = all.find((a) => a.id === selected),
     contract = versions.filter((v) => v.definition.id === selected).at(-1);
+  function openQuery(version: Version) {
+    setQuerySelection({
+      metricId: version.definition.id,
+      version: version.version,
+    });
+    go("api");
+  }
   function create(a: Asset) {
     setDraft({
       ...edit(
@@ -278,7 +287,10 @@ export function Builder({
                     Create metric
                   </button>
                 ) : asset.type === "metric" ? (
-                  <button className="button primary" onClick={() => go("api")}>
+                  <button
+                    className="button primary"
+                    onClick={() => openQuery(contract!)}
+                  >
                     Use existing metric
                   </button>
                 ) : (
@@ -407,11 +419,17 @@ export function Builder({
           versions={versions}
           setVersions={setVersions}
           go={go}
+          onQuery={openQuery}
         />
       )}
       {view === "api" && (
         <Playground
-          metricId={selected}
+          key={
+            querySelection
+              ? `${querySelection.metricId}:${querySelection.version}`
+              : "default"
+          }
+          selection={querySelection}
           versions={versions}
           investigate={investigate}
         />

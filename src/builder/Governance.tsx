@@ -2,10 +2,9 @@ import { useState } from "react";
 import {
   deprecate,
   edit,
-  impact,
+  draftImpact,
   publish,
   validate,
-  validated,
   type Check,
   type Draft,
   type Version,
@@ -16,18 +15,20 @@ export function Governance({
   versions,
   setVersions,
   go,
+  onQuery,
 }: {
   draft: Draft;
   setDraft: (d: Draft) => void;
   versions: Version[];
   setVersions: (v: Version[]) => void;
-  go: (v: "metric" | "api") => void;
+  go: (v: "metric") => void;
+  onQuery: (v: Version) => void;
 }) {
   const [checks, setChecks] = useState<Check[] | null>(null),
     [message, setMessage] = useState(""),
     [permission, setPermission] = useState(true);
-  const latest = versions.filter((v) => v.definition.id === d.id).at(-1),
-    change = latest ? impact(latest, d) : undefined;
+  const change = draftImpact(d, versions),
+    base = change?.base;
   function run() {
     const c = validate(d, versions, undefined, permission);
     setChecks(c);
@@ -172,14 +173,14 @@ export function Governance({
       </section>
       {change && (
         <section className="builder-panel">
-          <h2>Change impact vs v{latest!.version}</h2>
+          <h2>Change impact vs v{change.base.version}</h2>
           <p>
             {change.breaking
               ? "Potentially breaking: " + change.changed.join(", ")
               : "Calculation contract unchanged. Metadata-only revision."}
           </p>
           <p>
-            Affected consumers remain pinned to v{latest!.version}:{" "}
+            Affected consumers remain pinned to v{change.base.version}:{" "}
             {change.consumers.map((c) => c.label).join(", ") ||
               "No consumers pinned to this version."}
           </p>
@@ -249,7 +250,11 @@ export function Governance({
             </tbody>
           </table>
         </div>
-        <button className="button" onClick={() => go("api")}>
+        <button
+          className="button"
+          disabled={!base}
+          onClick={() => base && onQuery(base)}
+        >
           Query published metric
         </button>
       </section>

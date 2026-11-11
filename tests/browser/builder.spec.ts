@@ -216,3 +216,163 @@ test("published edit creates a new immutable version with impact and deprecation
     '"denominator": 755',
   );
 });
+
+for (const scenario of [
+  {
+    source: "group_order_completion_rate",
+    published: "group_order_completion_rate",
+    version: "2",
+    stale: "payment_failure_rate",
+  },
+  {
+    source: "payment_failure_rate",
+    published: "payment_failure_rate",
+    version: "2",
+    stale: "group_order_completion_rate",
+  },
+  {
+    source: "group_order_completion_rate",
+    published: "renamed_completion_rate",
+    version: "1",
+    stale: "payment_failure_rate",
+  },
+]) {
+  test(`publish handoff pins ${scenario.published} and its exact version`, async ({
+    page,
+  }) => {
+    await page.goto("./#page=builder&builderView=catalog");
+    await page
+      .getByRole("button", { name: scenario.stale, exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Use existing metric", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Run Query", exact: true }).click();
+    await expect(page.getByLabel("API response")).toContainText(
+      `"metric_id": "${scenario.stale}"`,
+    );
+    await page
+      .getByRole("button", { name: "Validation & Publishing", exact: true })
+      .click();
+    await page
+      .getByRole("row")
+      .filter({ hasText: scenario.source })
+      .getByRole("button", { name: "New draft from v1", exact: true })
+      .click();
+    if (scenario.published !== scenario.source)
+      await page
+        .getByRole("textbox", { name: "Machine identifier", exact: true })
+        .fill(scenario.published);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Calculate preview", exact: true })
+      .click();
+    if (scenario.source === "payment_failure_rate") {
+      await expect(
+        page.getByRole("columnheader", {
+          name: "Groups with declined payment",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("columnheader", { name: "Completed", exact: true }),
+      ).toHaveCount(0);
+    } else
+      await expect(
+        page.getByRole("columnheader", { name: "Completed", exact: true }),
+      ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Validate draft", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Run validation", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Publish version", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toContainText(
+      `Published v${scenario.version}.`,
+    );
+    await page
+      .getByRole("button", { name: "Query published metric", exact: true })
+      .click();
+    await expect(
+      page.getByRole("combobox", { name: "Metric", exact: true }),
+    ).toHaveValue(scenario.published);
+    await expect(
+      page.getByRole("combobox", { name: "Version", exact: true }),
+    ).toHaveValue(scenario.version);
+    await expect(page.getByLabel("API request")).toContainText(
+      `/v1/metrics/${scenario.published}/query?version=${scenario.version}`,
+    );
+    await expect(page.getByLabel("API response")).toHaveCount(0);
+    await page.getByRole("button", { name: "Run Query", exact: true }).click();
+    await expect(page.getByLabel("API response")).toContainText(
+      `"metric_id": "${scenario.published}"`,
+    );
+    await expect(page.getByLabel("API response")).toContainText(
+      `"version": ${scenario.version}`,
+    );
+  });
+}
+
+test("editing v1 after v2 compares and queries v1 with its pinned consumers", async ({
+  page,
+}) => {
+  await page.goto("./#page=builder&builderView=validation");
+  await page
+    .getByRole("row")
+    .filter({ hasText: "group_order_completion_rate" })
+    .getByRole("button", { name: "New draft from v1", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Creation cohort", exact: true })
+    .selectOption("all");
+  await page
+    .getByRole("button", { name: "Validate draft", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Run validation", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Publish version", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Published v2.");
+  await page
+    .getByRole("row")
+    .filter({ hasText: "group_order_completion_rate" })
+    .getByRole("button", { name: "New draft from v1", exact: true })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Business definition", exact: true })
+    .fill("A metadata-only revision of the original completion contract.");
+  await page
+    .getByRole("button", { name: "Validate draft", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Change impact vs v1", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Calculation contract unchanged. Metadata-only revision.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Affected consumers remain pinned to v1: Product dashboard, Internal AI agent, Thread investigation",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Query published metric", exact: true })
+    .click();
+  await expect(
+    page.getByRole("combobox", { name: "Version", exact: true }),
+  ).toHaveValue("1");
+  await page.getByRole("button", { name: "Run Query", exact: true }).click();
+  await expect(page.getByLabel("API response")).toContainText(
+    '"denominator": 755',
+  );
+});

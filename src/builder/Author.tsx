@@ -229,7 +229,11 @@ export function Author({
                     <thead>
                       <tr>
                         <th>{d.dimensions[0] || "Group"}</th>
-                        <th>Completed</th>
+                        <th>
+                          {d.kind === "failure"
+                            ? "Groups with declined payment"
+                            : "Completed"}
+                        </th>
                         <th>Eligible</th>
                         <th>Rate</th>
                       </tr>
