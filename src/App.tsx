@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { Builder, views, type View } from "./builder/Builder";
+import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard,
   Route,
@@ -21,9 +22,10 @@ import {
   type Filters,
 } from "./data";
 import type { Evidence } from "./investigator";
-type Page = "overview" | "journey" | "studio";
+type Page = "overview" | "journey" | "studio" | "builder";
 interface RouteState {
   page: Page;
+  builderView: View;
   filters: Filters;
   sessionId: string;
   event: number;
@@ -61,7 +63,12 @@ function readRoute(): RouteState {
     fallback: T,
   ): T => (values.includes(p.get(key) as T) ? (p.get(key) as T) : fallback);
   return {
-    page: valid("page", ["overview", "journey", "studio"], "overview"),
+    builderView: valid("builderView", views, "overview"),
+    page: valid(
+      "page",
+      ["overview", "journey", "studio", "builder"],
+      "overview",
+    ),
     filters: {
       size: valid("size", ["all", "small", "large"], "all"),
       payment: valid("payment", ["all", "single", "split"], "all"),
@@ -105,6 +112,7 @@ function readRoute(): RouteState {
   };
 }
 export default function App() {
+  const previousInvestigation = useRef<Page>("overview");
   const [route, setRoute] = useState<RouteState>(readRoute),
     [architecture, setArchitecture] = useState(false);
   useEffect(() => {
@@ -116,11 +124,13 @@ export default function App() {
       window.removeEventListener("hashchange", fn);
     };
   }, []);
+  if (route.page !== "builder") previousInvestigation.current = route.page;
   function navigate(change: Partial<RouteState>, replace = false) {
     const next = { ...route, ...change };
     setRoute(next);
     const params = new URLSearchParams({
       page: next.page,
+      ...(next.page === "builder" ? { builderView: next.builderView } : {}),
       ...next.filters,
       session: next.sessionId,
       event: String(next.event),
@@ -219,6 +229,7 @@ export default function App() {
     overview: "Product overview",
     journey: "Journey analysis",
     studio: "Investigation studio",
+    builder: "Builder Studio",
   };
   return (
     <div
@@ -258,6 +269,22 @@ export default function App() {
           </div>
           <span className="workspace-badge">DEMO</span>
         </div>
+        <div className="workspace-switch" aria-label="Workspace switcher">
+          <button
+            className="button"
+            aria-pressed={route.page !== "builder"}
+            onClick={() => navigate({ page: previousInvestigation.current })}
+          >
+            Investigate
+          </button>
+          <button
+            className="button"
+            aria-pressed={route.page === "builder"}
+            onClick={() => navigate({ page: "builder" })}
+          >
+            Builder Studio
+          </button>
+        </div>
         <div className="nav-label">WORKSPACE</div>
         <nav aria-label="Main navigation">
           {(
@@ -281,7 +308,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-connection">
+        <div className="sidebar-connection" hidden={route.page === "builder"}>
           <div className="thread-illustration" aria-hidden="true">
             <i />
             <i />
@@ -338,7 +365,33 @@ export default function App() {
             <span className="header-avatar">PM</span>
           </div>
         </header>
+        <div
+          className="workspace-switch workspace-switch-mobile"
+          aria-label="Workspace switcher"
+        >
+          <button
+            className="button"
+            aria-pressed={route.page !== "builder"}
+            onClick={() => navigate({ page: previousInvestigation.current })}
+          >
+            Investigate
+          </button>
+          <button
+            className="button"
+            aria-pressed={route.page === "builder"}
+            onClick={() => navigate({ page: "builder" })}
+          >
+            Builder Studio
+          </button>
+        </div>
         <main id="main-content" tabIndex={-1}>
+          <div hidden={route.page !== "builder"}>
+            <Builder
+              view={route.builderView}
+              go={(builderView) => navigate({ builderView })}
+              investigate={() => navigate({ page: "journey" })}
+            />
+          </div>
           <div hidden={route.page !== "overview"}>
             <Overview
               onInvestigate={() =>

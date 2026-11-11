@@ -1,0 +1,336 @@
+import { useState } from "react";
+import { consumers, query, type Version } from "./domain";
+export function Playground({
+  versions,
+  investigate,
+  metricId,
+}: {
+  metricId: string;
+  versions: Version[];
+  investigate: () => void;
+}) {
+  const [id, setId] = useState(
+      versions.some((v) => v.definition.id === metricId)
+        ? metricId
+        : versions[0]?.definition.id || "",
+    ),
+    [version, setVersion] = useState(
+      versions.filter((v) => v.definition.id === id).at(-1)?.version || 1,
+    ),
+    [dimension, setDimension] = useState(""),
+    [payment, setPayment] = useState("all"),
+    [window, setWindow] = useState("recent"),
+    [authorized, setAuthorized] = useState(true),
+    [response, setResponse] = useState<ReturnType<typeof query> | null>(null),
+    [error, setError] = useState(""),
+    [copied, setCopied] = useState("");
+  const selected = versions.find(
+      (v) => v.definition.id === id && v.version === version,
+    ),
+    ids = [...new Set(versions.map((v) => v.definition.id))];
+  const request = `GET /v1/metrics/${id}/query?${new URLSearchParams({ version: String(version), window, payment, ...(dimension ? { dimension } : {}) })}`;
+  function reset() {
+    setResponse(null);
+    setError("");
+    setCopied("");
+  }
+  function run() {
+    try {
+      setResponse(
+        query(versions, id, version, {
+          dimension,
+          payment,
+          window,
+          authorized,
+        }),
+      );
+      setError("");
+    } catch (e) {
+      setResponse(null);
+      setError((e as Error).message);
+    }
+  }
+  async function copy(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(label + " copied.");
+    } catch {
+      setCopied("Clipboard unavailable. Select and copy the visible text.");
+    }
+  }
+  return (
+    <>
+      <div className="builder-grid">
+        <section className="builder-panel">
+          <h2>Query a published metric</h2>
+          <p>Illustrative API contract · Run Query executes locally.</p>
+          <div className="builder-form">
+            <label>
+              Metric
+              <select
+                value={id}
+                onChange={(e) => {
+                  setId(e.target.value);
+                  setVersion(
+                    versions
+                      .filter((v) => v.definition.id === e.target.value)
+                      .at(-1)!.version,
+                  );
+                  setDimension("");
+                  reset();
+                }}
+              >
+                {ids.map((x) => (
+                  <option key={x}>{x}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Version
+              <select
+                value={version}
+                onChange={(e) => {
+                  setVersion(Number(e.target.value));
+                  setDimension("");
+                  reset();
+                }}
+              >
+                {versions
+                  .filter((v) => v.definition.id === id)
+                  .map((v) => (
+                    <option key={v.version} value={v.version}>
+                      v{v.version} · {v.state}
+                    </option>
+                  ))}
+                <option value="999">v999 · unavailable (test error)</option>
+              </select>
+            </label>
+            <label>
+              Group by
+              <select
+                value={dimension}
+                onChange={(e) => {
+                  setDimension(e.target.value);
+                  reset();
+                }}
+              >
+                <option value="">No grouping</option>
+                {selected?.definition.dimensions.map((x) => (
+                  <option key={x}>{x}</option>
+                ))}
+                <option value="market">
+                  market · unsupported (test error)
+                </option>
+              </select>
+            </label>
+            <label>
+              Payment mode
+              <select
+                value={payment}
+                onChange={(e) => {
+                  setPayment(e.target.value);
+                  reset();
+                }}
+              >
+                <option value="all">All</option>
+                <option value="single">single</option>
+                <option value="split">split</option>
+              </select>
+            </label>
+            <label>
+              Creation cohort (UTC)
+              <select
+                value={window}
+                onChange={(e) => {
+                  setWindow(e.target.value);
+                  reset();
+                }}
+              >
+                <option value="recent">October 15–28, 2026</option>
+                <option value="previous">October 1–14, 2026</option>
+                <option value="all">October 1–28, 2026</option>
+              </select>
+            </label>
+          </div>
+          <details>
+            <summary>Access simulation</summary>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={authorized}
+                onChange={(e) => {
+                  setAuthorized(e.target.checked);
+                  reset();
+                }}
+              />
+              Consumer authorized (simulated)
+            </label>
+          </details>
+          <pre aria-label="API request">{request}</pre>
+          <div className="builder-actions">
+            <button className="button primary" onClick={run}>
+              Run Query
+            </button>
+            <button className="button" onClick={() => copy(request, "Request")}>
+              Copy request
+            </button>
+          </div>
+        </section>
+        <section className="builder-panel">
+          <h2>Developer Quickstart</h2>
+          <ol>
+            <li>Discover a certified metric in Data Catalog.</li>
+            <li>Inspect its version, source and dimensions.</li>
+            <li>Choose a UTC cohort and supported filters.</li>
+            <li>Run a local query and inspect evidence metadata.</li>
+            <li>Copy the request; pin the version in your consumer.</li>
+          </ol>
+          <details>
+            <summary>Consumption contract</summary>
+            <p>
+              <strong>Parameters:</strong> version (required integer), window
+              (recent / previous / all), payment (single / split / all),
+              dimension (one published dimension). Windows use group creation
+              time, not payment event time.
+            </p>
+            <p>
+              <strong>Authentication:</strong> no credentials or network calls
+              in this demo. Production would require service identity and metric
+              read authorization.
+            </p>
+            <p>
+              <strong>Versioning:</strong> published definitions are immutable.
+              Deprecated versions remain queryable; prefer a reviewed supported
+              version for new integrations.
+            </p>
+            <p>
+              <strong>Errors:</strong> UNAUTHORIZED (conceptual 403),
+              METRIC_VERSION_NOT_FOUND (404), UNSUPPORTED_DIMENSION /
+              INVALID_FILTER / INVALID_WINDOW (400). No HTTP request is sent.
+            </p>
+            <p>
+              <strong>Response:</strong> percent value (null for zero
+              denominator), grouped counts, cohort, source IDs, quality and
+              stable demo timestamp.
+            </p>
+          </details>
+          {selected && (
+            <details>
+              <summary>Selected definition and schema</summary>
+              <p>{selected.definition.description}</p>
+              <p>
+                Owner: {selected.definition.businessOwner} · Maintainer:{" "}
+                {selected.definition.maintainer}
+              </p>
+              <p>
+                {selected.definition.numerator} ÷{" "}
+                {selected.definition.denominator} × 100 · distinct{" "}
+                {selected.definition.grain} · {selected.definition.timeField}
+              </p>
+              <p>
+                Dimensions:{" "}
+                {selected.definition.dimensions.join(", ") || "None"} · Source:{" "}
+                {selected.definition.source}
+              </p>
+            </details>
+          )}
+        </section>
+      </div>
+      <section className="builder-panel" aria-live="polite">
+        <h2>Response</h2>
+        {error ? (
+          <p role="alert" className="error">
+            {error}. Review version, dimensions or simulated access and run
+            again.
+          </p>
+        ) : response ? (
+          <>
+            <div className="builder-result">
+              {response.value === null
+                ? "No eligible groups"
+                : response.value.toFixed(2) + "%"}
+            </div>
+            <p>
+              v{response.version} · {response.numerator} matching /{" "}
+              {response.denominator} eligible · {response.quality}
+            </p>
+            {response.lifecycle === "Deprecated" && (
+              <p className="warning">
+                Deprecated contract. Existing pinned integrations remain
+                compatible; review a newer version for new use.
+              </p>
+            )}
+            <pre aria-label="API response">
+              {JSON.stringify(response, null, 2)}
+            </pre>
+            <button
+              className="button"
+              onClick={() =>
+                copy(JSON.stringify(response, null, 2), "Response")
+              }
+            >
+              Copy response
+            </button>
+          </>
+        ) : (
+          <p>Choose parameters and run a query to calculate a response.</p>
+        )}
+        <p role="status">{copied}</p>
+      </section>
+      <section className="builder-panel">
+        <h2>One definition, three consumers</h2>
+        <p>
+          Existing integrations are pinned to explicit v1 contracts. Querying v2
+          above does not upgrade these integrations.
+        </p>
+        {consumers.map((c) => {
+          const r = query(versions, c.metric, c.version);
+          return (
+            <div className="builder-row" key={c.id}>
+              <div>
+                <strong>{c.label}</strong>
+                <small>
+                  {c.metric} · v{c.version} · {r.period}
+                </small>
+                {c.id === "1" && (
+                  <details>
+                    <summary>Structured agent evidence (no LLM call)</summary>
+                    <pre>
+                      {JSON.stringify(
+                        {
+                          claim: "Eligible group completion",
+                          evidence: {
+                            metric_id: r.metric_id,
+                            version: r.version,
+                            value: r.value,
+                            unit: r.unit,
+                            numerator: r.numerator,
+                            denominator: r.denominator,
+                            source_ids: r.source_ids,
+                          },
+                          limitation:
+                            "Aggregate evidence; no causal or individual-session claim.",
+                        },
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </details>
+                )}
+              </div>
+              <span>{r.value?.toFixed(2) ?? "—"}%</span>
+            </div>
+          );
+        })}
+        <p>
+          Investigation opens the existing group journey. Builder filters are
+          not mapped to individual replay sessions. The aggregate cohort and any
+          previously selected investigation filters may differ.
+        </p>
+        <button className="button primary" onClick={investigate}>
+          Investigate in Thread
+        </button>
+      </section>
+    </>
+  );
+}

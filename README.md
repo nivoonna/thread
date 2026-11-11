@@ -43,3 +43,13 @@ npm run test:e2e
 [Explore the live demo](https://nivoonna.github.io/thread/)
 
 All 1,500 groups are synthetic and reproducible. Twenty-three sessions cover every member of five curated orders using authored UI reconstruction. The investigator runs local analysis, not a live LLM.
+
+**Builder Studio**
+
+Switch from **Investigate** to **Builder Studio** to discover data products, author a governed metric, recover a real schema validation failure, publish an immutable version and query it locally. Existing `page=studio` links still open Investigation Studio; Builder uses `#page=builder&builderView=overview` under the same `/thread/` base.
+
+Demo: **Data Catalog → group_orders → Create metric → Continue twice → Calculate preview → Validate draft → Test legacy field reference → Run validation → Use completed field → Run validation → Publish version → Query published metric → Run Query → Investigate in Thread**. The seeded completion metric is already certified: reuse v1 or publish your revision as v2. Consumers stay pinned to v1.
+
+Builder adds no credentials, network service or dependency. It maps Gather's existing deterministic group/order/payment fixtures; GrabFood Group Payments v2 is illustrative framing, not a deployed integration. Drafts and publications last for the app session; refreshing starts a clean demo. Payment mode, release and period are supported dimensions; market and platform are unavailable. Source quality, approval and permissions are explicitly simulated.
+
+The existing commands above run the combined unit and browser suites. `npm run build` includes TypeScript checking; there is no lint script. Pull-request CI validates without deploying. See [Builder architecture, walkthrough and verification](docs/BUILDER_STUDIO.md).
