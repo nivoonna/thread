@@ -4369,3 +4369,68 @@ td small {
 .brief-modal .modal-footer {
   margin-top: 16px;
 }
+
+/* Select the workspace once; navigation belongs to the active workspace. */
+.workspace-identity {
+  flex: 1;
+  min-width: 0;
+}
+.workspace-identity > strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.workspace-identity .workspace-badge {
+  margin-left: 0;
+}
+.workspace-selector {
+  position: relative;
+  display: block;
+  max-width: 100%;
+}
+.workspace-selector select {
+  appearance: none;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 20px 4px 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+.workspace-selector > svg {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--muted);
+}
+.workspace-picker-mobile {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .sidebar .workspace-name {
+    display: none;
+  }
+  .workspace-picker-mobile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .workspace-picker-mobile > span {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .workspace-picker-mobile .workspace-selector {
+    width: 150px;
+  }
+  .workspace-picker-mobile select {
+    min-height: 40px;
+    font-size: 13px;
+  }
+}

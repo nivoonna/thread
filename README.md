@@ -46,10 +46,18 @@ All 1,500 groups are synthetic and reproducible. Twenty-three sessions cover eve
 
 **Builder Studio**
 
-Switch from **Investigate** to **Builder Studio** to discover data products, author a governed metric, recover a real schema validation failure, publish an immutable version and query it locally. Existing `page=studio` links still open Investigation Studio; Builder uses `#page=builder&builderView=overview` under the same `/thread/` base.
+Use the arrow beside the Gather workspace name to choose **Investigate** or **Builder Studio**. Switching opens that workspace’s landing page and shows only its own sidebar. In Builder Studio, discover data products, author a governed metric, recover a real schema validation failure, publish an immutable version and query it locally. Existing `page=studio` links still open Investigation Studio; Builder uses `#page=builder&builderView=overview` under the same `/thread/` base.
 
 Demo: **Data Catalog → group_orders → Create metric → Continue twice → Calculate preview → Validate draft → Test legacy field reference → Run validation → Use completed field → Run validation → Publish version → Query published metric → Run Query → Investigate in Thread**. The seeded completion metric is already certified: reuse v1 or publish your revision as v2. Consumers stay pinned to v1.
 
 Builder adds no credentials, network service or dependency. It maps Gather's existing deterministic group/order/payment fixtures; GrabFood Group Payments v2 is illustrative framing, not a deployed integration. Drafts and publications last for the app session; refreshing starts a clean demo. Payment mode, release and period are supported dimensions; market and platform are unavailable. Source quality, approval and permissions are explicitly simulated.
 
-The existing commands above run the combined unit and browser suites. `npm run build` includes TypeScript checking; there is no lint script. Pull-request CI validates without deploying. See [Builder architecture, walkthrough and verification](docs/BUILDER_STUDIO.md).
+The existing commands above run the combined unit and browser suites. `npm run build` includes TypeScript checking; there is no lint script. Pull-request CI validates without deploying. See [Builder Studio: demo and technical guide](docs/BUILDER_STUDIO.md).
+
+**GitHub and releases**
+
+- **Check proposed changes** runs tests and builds an open pull request. It does not publish the site.
+- **Test and publish live Thread site** tests main and publishes it to the [existing Thread link](https://nivoonna.github.io/thread/).
+- A merged PR puts code on main. A successful deployment publishes it. An older red run is a historical failed attempt, not the status of the latest release.
+
+See [GitHub guide: pull requests, checks and live releases](docs/GITHUB_GUIDE.md) for naming, statuses, release verification and the Builder Studio change history.

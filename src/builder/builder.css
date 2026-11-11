@@ -177,20 +177,6 @@
   font-size: 12px;
   vertical-align: middle;
 }
-.workspace-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 12px;
-}
-.workspace-switch .button {
-  font-size: 12px;
-  padding: 8px;
-}
-.workspace-switch [aria-pressed="true"] {
-  background: var(--green-soft);
-  color: var(--green);
-}
 .builder-actions {
   display: flex;
   flex-wrap: wrap;
@@ -335,19 +321,4 @@
 }
 .builder-grid {
   align-items: start;
-}
-
-.workspace-switch-mobile {
-  display: none;
-}
-@media (max-width: 1100px) {
-  .sidebar .workspace-switch {
-    display: none;
-  }
-  .workspace-switch-mobile {
-    display: flex;
-    padding: 12px 16px;
-    margin: 0;
-    border-bottom: 1px solid var(--line);
-  }
 }

@@ -1,4 +1,5 @@
-name: Validate pull request
+name: Check proposed changes
+run-name: "Check PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
 on:
   pull_request:
     branches: [main]
@@ -8,17 +9,25 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out the proposed changes
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - name: Install dependencies
+        run: npm ci
+      - name: Run unit tests
+        run: npm test
+      - name: Check TypeScript and build the app
+        run: npm run build
+      - name: Install browser test tools
+        run: npx playwright install --with-deps chromium
+      - name: Run browser tests
+        run: npm run test:e2e
+      - name: Save browser test evidence
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: browser-evidence

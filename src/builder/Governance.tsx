@@ -16,6 +16,7 @@ export function Governance({
   setVersions,
   go,
   onQuery,
+  onNewDraft,
 }: {
   draft: Draft;
   setDraft: (d: Draft) => void;
@@ -23,6 +24,7 @@ export function Governance({
   setVersions: (v: Version[]) => void;
   go: (v: "metric") => void;
   onQuery: (v: Version) => void;
+  onNewDraft: (v: Version) => void;
 }) {
   const [checks, setChecks] = useState<Check[] | null>(null),
     [message, setMessage] = useState(""),
@@ -217,9 +219,7 @@ export function Governance({
                     <button
                       className="builder-link"
                       onClick={() => {
-                        setDraft(edit(v));
-                        setChecks(null);
-                        go("metric");
+                        onNewDraft(v);
                       }}
                     >
                       New draft from v{v.version}

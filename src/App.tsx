@@ -1,5 +1,9 @@
-import { Builder, views, type View } from "./builder/Builder";
-import { useState, useEffect, useRef } from "react";
+import {
+  WorkspaceSwitcher,
+  type Workspace,
+} from "./components/WorkspaceSwitcher";
+import { Builder, views, builderLabels, type View } from "./builder/Builder";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Route,
@@ -9,6 +13,10 @@ import {
   ArrowUpRight,
   Command,
   Link2,
+  Database,
+  SlidersHorizontal,
+  ShieldCheck,
+  Code2,
 } from "lucide-react";
 import { Overview } from "./components/Overview";
 import { Journey } from "./components/Journey";
@@ -22,6 +30,13 @@ import {
   type Filters,
 } from "./data";
 import type { Evidence } from "./investigator";
+const builderIcons = {
+  overview: LayoutDashboard,
+  catalog: Database,
+  metric: SlidersHorizontal,
+  validation: ShieldCheck,
+  api: Code2,
+};
 type Page = "overview" | "journey" | "studio" | "builder";
 interface RouteState {
   page: Page;
@@ -112,7 +127,6 @@ function readRoute(): RouteState {
   };
 }
 export default function App() {
-  const previousInvestigation = useRef<Page>("overview");
   const [route, setRoute] = useState<RouteState>(readRoute),
     [architecture, setArchitecture] = useState(false);
   useEffect(() => {
@@ -124,7 +138,7 @@ export default function App() {
       window.removeEventListener("hashchange", fn);
     };
   }, []);
-  if (route.page !== "builder") previousInvestigation.current = route.page;
+  const inBuilder = route.page === "builder";
   function navigate(change: Partial<RouteState>, replace = false) {
     const next = { ...route, ...change };
     setRoute(next);
@@ -145,6 +159,13 @@ export default function App() {
     });
     history[replace ? "replaceState" : "pushState"](null, "", `#${params}`);
     if (change.page && change.page !== route.page) window.scrollTo({ top: 0 });
+  }
+  function switchWorkspace(workspace: Workspace) {
+    navigate(
+      workspace === "builder"
+        ? { page: "builder", builderView: "overview" }
+        : { page: "overview" },
+    );
   }
   const onSession = (
     id: string,
@@ -247,11 +268,16 @@ export default function App() {
       </a>
       <aside className="sidebar">
         <a
-          href="#page=overview"
+          href={
+            inBuilder ? "#page=builder&builderView=overview" : "#page=overview"
+          }
           className="brand"
           onClick={(e) => {
             e.preventDefault();
-            navigate({ page: "overview" });
+            navigate({
+              page: inBuilder ? "builder" : "overview",
+              builderView: "overview",
+            });
           }}
         >
           <ThreadMark />
@@ -263,51 +289,69 @@ export default function App() {
           <span className="workspace-icon">
             g<span>✳</span>
           </span>
-          <div>
-            <strong>Gather</strong>
-            <small>Product workspace</small>
+          <div className="workspace-identity">
+            <strong>
+              Gather <span className="workspace-badge">DEMO</span>
+            </strong>
+            <WorkspaceSwitcher
+              value={inBuilder ? "builder" : "investigate"}
+              onChange={switchWorkspace}
+            />
           </div>
-          <span className="workspace-badge">DEMO</span>
         </div>
-        <div className="workspace-switch" aria-label="Workspace switcher">
-          <button
-            className="button"
-            aria-pressed={route.page !== "builder"}
-            onClick={() => navigate({ page: previousInvestigation.current })}
-          >
-            Investigate
-          </button>
-          <button
-            className="button"
-            aria-pressed={route.page === "builder"}
-            onClick={() => navigate({ page: "builder" })}
-          >
-            Builder Studio
-          </button>
+        <div className="nav-label">
+          {inBuilder ? "BUILDER STUDIO" : "INVESTIGATE"}
         </div>
-        <div className="nav-label">WORKSPACE</div>
-        <nav aria-label="Main navigation">
-          {(
-            [
-              { page: "overview", label: "Overview", Icon: LayoutDashboard },
-              { page: "journey", label: "Journey Analysis", Icon: Route },
-              { page: "studio", label: "Investigation Studio", Icon: ScanLine },
-            ] as const
-          ).map(({ page, label, Icon }) => (
-            <button
-              key={page}
-              aria-label={label}
-              title={label}
-              className={route.page === page ? "active" : ""}
-              onClick={() => navigate({ page })}
-              aria-current={route.page === page ? "page" : undefined}
-            >
-              <Icon size={17} />
-              <span>{label}</span>
-              {route.page === page && <span className="nav-indicator" />}
-            </button>
-          ))}
-        </nav>
+        {inBuilder ? (
+          <nav aria-label="Builder navigation" className="builder-sidebar-nav">
+            {views.map((view) => {
+              const Icon = builderIcons[view];
+              return (
+                <button
+                  key={view}
+                  aria-label={builderLabels[view]}
+                  title={builderLabels[view]}
+                  className={route.builderView === view ? "active" : ""}
+                  aria-current={route.builderView === view ? "page" : undefined}
+                  onClick={() => navigate({ builderView: view })}
+                >
+                  <Icon size={17} />
+                  <span>{builderLabels[view]}</span>
+                  {route.builderView === view && (
+                    <span className="nav-indicator" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        ) : (
+          <nav aria-label="Main navigation">
+            {(
+              [
+                { page: "overview", label: "Overview", Icon: LayoutDashboard },
+                { page: "journey", label: "Journey Analysis", Icon: Route },
+                {
+                  page: "studio",
+                  label: "Investigation Studio",
+                  Icon: ScanLine,
+                },
+              ] as const
+            ).map(({ page, label, Icon }) => (
+              <button
+                key={page}
+                aria-label={label}
+                title={label}
+                className={route.page === page ? "active" : ""}
+                onClick={() => navigate({ page })}
+                aria-current={route.page === page ? "page" : undefined}
+              >
+                <Icon size={17} />
+                <span>{label}</span>
+                {route.page === page && <span className="nav-indicator" />}
+              </button>
+            ))}
+          </nav>
+        )}
         <div className="sidebar-connection" hidden={route.page === "builder"}>
           <div className="thread-illustration" aria-hidden="true">
             <i />
@@ -345,9 +389,13 @@ export default function App() {
           <div className="breadcrumb">
             <span>Workspace</span>
             <ChevronRight size={13} />
-            <span>Group Orders</span>
+            <span>{inBuilder ? "Builder Studio" : "Group Orders"}</span>
             <ChevronRight size={13} />
-            <strong>{titles[route.page]}</strong>
+            <strong>
+              {inBuilder
+                ? builderLabels[route.builderView]
+                : titles[route.page]}
+            </strong>
           </div>
           <div className="topbar-actions">
             <span className="synthetic-badge">
@@ -365,24 +413,12 @@ export default function App() {
             <span className="header-avatar">PM</span>
           </div>
         </header>
-        <div
-          className="workspace-switch workspace-switch-mobile"
-          aria-label="Workspace switcher"
-        >
-          <button
-            className="button"
-            aria-pressed={route.page !== "builder"}
-            onClick={() => navigate({ page: previousInvestigation.current })}
-          >
-            Investigate
-          </button>
-          <button
-            className="button"
-            aria-pressed={route.page === "builder"}
-            onClick={() => navigate({ page: "builder" })}
-          >
-            Builder Studio
-          </button>
+        <div className="workspace-picker-mobile">
+          <span>Gather</span>
+          <WorkspaceSwitcher
+            value={inBuilder ? "builder" : "investigate"}
+            onChange={switchWorkspace}
+          />
         </div>
         <main id="main-content" tabIndex={-1}>
           <div hidden={route.page !== "builder"}>

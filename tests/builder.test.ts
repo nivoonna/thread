@@ -10,6 +10,7 @@ import {
   deprecate,
   impact,
   draftImpact,
+  hasDraftChanges,
   query,
   calculate,
   initialVersions,
@@ -228,5 +229,42 @@ describe("draft base-version change impact", () => {
       failure = versions.find((v) => v.definition.kind === "failure")!;
     expect(draftImpact(edit(failure), versions)?.base).toBe(failure);
     expect(draftImpact(edit(failure), versions)?.consumers).toEqual([]);
+  });
+});
+
+describe("active draft protection", () => {
+  it("does not prompt for untouched or just-published snapshots and ignores lifecycle-only state", () => {
+    const versions = initialVersions(),
+      draft = edit(versions[0]);
+    expect(hasDraftChanges(draft, versions)).toBe(false);
+    expect(hasDraftChanges({ ...draft, state: "Validated" }, versions)).toBe(
+      false,
+    );
+    draft.name = "Updated name";
+    const version = publish(validated(draft, versions), versions);
+    expect(hasDraftChanges(edit(version), [...versions, version])).toBe(false);
+  });
+  it("protects metadata and calculation edits even when based on an older published version", () => {
+    const versions = initialVersions(),
+      v1 = versions[0],
+      next = edit(v1);
+    next.window = "all";
+    const v2 = publish(validated(next, versions), versions),
+      history = [...versions, v2];
+    expect(hasDraftChanges(edit(v1), history)).toBe(false);
+    for (const patch of [
+      { name: "Saved name" },
+      { businessOwner: "New owner" },
+      { dimensions: [] },
+      { window: "previous" as const },
+    ])
+      expect(hasDraftChanges({ ...edit(v1), ...patch }, history)).toBe(true);
+  });
+  it("protects new or renamed contracts without a published snapshot", () => {
+    const versions = initialVersions();
+    expect(hasDraftChanges(newDraft(), versions)).toBe(true);
+    expect(
+      hasDraftChanges({ ...edit(versions[0]), id: "new_metric" }, versions),
+    ).toBe(true);
   });
 });

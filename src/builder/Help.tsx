@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 export function Help({
   label,
@@ -9,13 +9,32 @@ export function Help({
 }) {
   const id = useId(),
     button = useRef<HTMLButtonElement>(null),
+    tooltip = useRef<HTMLSpanElement>(null),
+    pointerFocus = useRef(false),
     [open, setOpen] = useState(false);
   const rect = button.current?.getBoundingClientRect();
+  useEffect(() => {
+    if (!open) return;
+    function outside(event: PointerEvent) {
+      const target = event.target as Node;
+      if (
+        !button.current?.contains(target) &&
+        !tooltip.current?.contains(target)
+      )
+        setOpen(false);
+    }
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [open]);
   return (
     <span
       className="builder-help"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onPointerEnter={(e) => {
+        if (e.pointerType === "mouse") setOpen(true);
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType === "mouse") setOpen(false);
+      }}
     >
       <button
         ref={button}
@@ -23,9 +42,24 @@ export function Help({
         aria-label={label}
         aria-describedby={open ? id : undefined}
         aria-expanded={open}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
-        onClick={() => setOpen(!open)}
+        onPointerDown={() => {
+          pointerFocus.current = true;
+        }}
+        onPointerCancel={() => {
+          pointerFocus.current = false;
+        }}
+        onFocus={() => {
+          if (!pointerFocus.current) setOpen(true);
+        }}
+        onBlur={() => {
+          pointerFocus.current = false;
+          setOpen(false);
+        }}
+        onClick={() => {
+          // Touch focus can arrive after pointerup; suppress it until click.
+          pointerFocus.current = false;
+          setOpen((value) => !value);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
             setOpen(false);
@@ -39,6 +73,7 @@ export function Help({
         rect &&
         createPortal(
           <span
+            ref={tooltip}
             className="builder-tooltip"
             id={id}
             role="tooltip"
