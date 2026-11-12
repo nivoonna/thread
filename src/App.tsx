@@ -253,9 +253,7 @@ export default function App() {
     builder: "Builder Studio",
   };
   return (
-    <div
-      className={`app-shell ${route.page === "studio" ? "studio-shell" : ""}`}
-    >
+    <div className="app-shell">
       <a
         className="skip-link"
         href="#main-content"
@@ -325,7 +323,10 @@ export default function App() {
             })}
           </nav>
         ) : (
-          <nav aria-label="Main navigation">
+          <nav
+            aria-label="Main navigation"
+            className="investigation-sidebar-nav"
+          >
             {(
               [
                 { page: "overview", label: "Overview", Icon: LayoutDashboard },

@@ -1158,17 +1158,6 @@ td small {
   font-size: 9px;
   color: #6e7566;
 }
-.studio-page {
-  padding: 26px 26px 20px;
-  animation: enter 0.25s ease-out;
-}
-.studio-title {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: center;
-  margin-bottom: 21px;
-}
 .back-link {
   display: flex;
   gap: 6px;
@@ -1179,9 +1168,6 @@ td small {
   color: #68725f;
   font-size: 11px;
   margin-bottom: 10px;
-}
-.studio-title h1 {
-  font-size: 26px;
 }
 .studio-actions {
   display: flex;
@@ -1211,7 +1197,6 @@ td small {
 }
 .studio-workspace {
   display: grid;
-  grid-template-columns: 220px minmax(310px, 1fr) 330px;
   border: 1px solid var(--line);
   border-top: 0;
   border-radius: 0 0 10px 10px;
@@ -2449,13 +2434,6 @@ td small {
   }
 }
 @media (min-width: 1600px) {
-  .studio-workspace {
-    grid-template-columns: 250px minmax(350px, 1fr) 380px;
-  }
-  .studio-page {
-    max-width: 1500px;
-    margin: auto;
-  }
   .phone {
     margin-top: 15px;
   }
@@ -2550,15 +2528,6 @@ td small {
   .funnel-chart {
     min-width: 800px;
   }
-  .studio-page {
-    padding: 23px 17px;
-  }
-  .studio-workspace {
-    grid-template-columns: 185px minmax(300px, 1fr) 290px;
-  }
-  .studio-title h1 {
-    font-size: 24px;
-  }
   .participant-selector {
     padding-left: 8px;
     padding-right: 8px;
@@ -2588,27 +2557,6 @@ td small {
   .investigator {
     padding-left: 14px;
     padding-right: 14px;
-  }
-  .studio-shell .sidebar {
-    width: 170px;
-  }
-  .studio-shell .app-content {
-    margin-left: 170px;
-  }
-  .studio-shell nav button {
-    font-size: 10px;
-    padding-left: 9px;
-    gap: 8px;
-  }
-  .studio-shell .brand {
-    padding-left: 3px;
-    gap: 6px;
-  }
-  .studio-shell .brand > span {
-    font-size: 16px;
-  }
-  .studio-shell .brand small {
-    letter-spacing: 1.2px;
   }
   .studio-actions {
     gap: 10px;
@@ -2640,28 +2588,6 @@ td small {
   }
 }
 @media (max-width: 1060px) {
-  .studio-shell .sidebar {
-    width: 68px;
-    padding: 20px 8px 0;
-  }
-  .studio-shell .brand {
-    justify-content: center;
-    padding-bottom: 24px;
-  }
-  .studio-shell .brand > span,
-  .studio-shell .workspace-name,
-  .studio-shell .nav-label,
-  .studio-shell nav button > span,
-  .studio-shell .sidebar-help {
-    display: none;
-  }
-  .studio-shell nav button {
-    justify-content: center;
-    padding: 13px;
-  }
-  .studio-shell .app-content {
-    margin-left: 68px;
-  }
   .page-title {
     align-items: flex-start;
   }
@@ -2754,36 +2680,6 @@ td small {
   .segment-overview > .text-button {
     margin-left: 18px;
   }
-  .studio-workspace {
-    grid-template-columns: 200px 1fr;
-  }
-  .context-panel {
-    grid-column: 1/-1;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    display: grid;
-    grid-template-columns: 1fr 1.1fr;
-  }
-  .context-panel > .workspace-panel-title {
-    grid-column: 1/-1;
-  }
-  .context-panel .investigator {
-    border-top: 0;
-    border-left: 1px solid var(--line);
-  }
-  .context-panel .business-context {
-    padding: 22px;
-  }
-  .context-panel .business-context dl {
-    font-size: 11px;
-    gap: 15px;
-  }
-  .context-panel .business-context dd {
-    font-size: 10px;
-  }
-  .context-panel .investigator {
-    padding: 22px;
-  }
   .findings p {
     font-size: 11px;
   }
@@ -2808,9 +2704,6 @@ td small {
   .studio-actions .outcome {
     display: none;
   }
-  .studio-title {
-    margin-bottom: 17px;
-  }
   .context-ribbon {
     flex-wrap: wrap;
     gap: 8px 15px;
@@ -2829,18 +2722,15 @@ td small {
   }
 }
 @media (max-width: 680px) {
-  .sidebar,
-  .studio-shell .sidebar {
+  .sidebar {
     width: 54px;
     padding-left: 5px;
     padding-right: 5px;
   }
-  .app-content,
-  .studio-shell .app-content {
+  .app-content {
     margin-left: 54px;
   }
-  .sidebar nav button,
-  .studio-shell nav button {
+  .sidebar nav button {
     padding: 12px 6px;
   }
   .topbar {
@@ -3035,22 +2925,8 @@ td small {
     font-size: 8px;
     line-height: 1.8;
   }
-  .studio-page {
-    padding: 22px 12px;
-  }
-  .studio-title h1 {
-    font-size: 23px;
-  }
-  .studio-title {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 13px;
-  }
   .studio-actions .button {
     font-size: 9px;
-  }
-  .studio-workspace {
-    grid-template-columns: 1fr;
   }
   .timeline-panel {
     border-right: 0;
@@ -3158,7 +3034,7 @@ td small {
 .sidebar nav button {
   font-size: 12px;
 }
-.sidebar nav button:last-child {
+.sidebar nav.builder-sidebar-nav button:last-child {
   font-size: 11px;
 }
 .breadcrumb {
@@ -3542,15 +3418,6 @@ td small {
   .funnel-summary {
     font-size: 9px;
   }
-  .studio-workspace {
-    grid-template-columns: 195px minmax(300px, 1fr) 290px;
-  }
-  .studio-shell nav button {
-    font-size: 10px !important;
-  }
-  .studio-shell .brand small {
-    font-size: 6px;
-  }
   .participant-selector .person-avatar {
     width: 19px;
     height: 19px;
@@ -3568,18 +3435,8 @@ td small {
   .business-context dd {
     font-size: 10px;
   }
-  .studio-title h1 {
-    font-size: 24px;
-  }
 }
 @media (max-width: 900px) {
-  .studio-workspace {
-    grid-template-columns: 200px 1fr;
-  }
-  .context-panel {
-    max-height: none;
-    overflow: visible;
-  }
   .page-title p {
     font-size: 12px;
   }
@@ -3603,9 +3460,6 @@ td small {
   }
 }
 @media (max-width: 680px) {
-  .studio-workspace {
-    grid-template-columns: 1fr;
-  }
   .sidebar nav button {
     padding: 12px 6px;
   }
@@ -3631,9 +3485,6 @@ td small {
   }
   .context-ribbon {
     font-size: 9px;
-  }
-  .studio-title h1 {
-    font-size: 23px;
   }
   .topbar-actions {
     gap: 6px;
@@ -3688,9 +3539,6 @@ td small {
   transform: translateY(-100%);
 }
 @media (max-width: 680px) {
-  .studio-workspace {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .context-panel {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -3706,11 +3554,6 @@ td small {
   }
 }
 @media (min-width: 901px) and (max-height: 900px) {
-  .replay-stage .phone {
-    transform: scale(0.88);
-    transform-origin: top center;
-    margin-bottom: -67px;
-  }
   .replay-meta {
     margin-bottom: 12px;
   }
@@ -4169,5 +4012,112 @@ td small {
 @media (max-width: 900px) {
   .sidebar-help {
     display: none;
+  }
+}
+
+/* Use the same frame and navigation scale for every page. */
+@media (min-width: 901px) {
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+.sidebar .investigation-sidebar-nav button {
+  position: relative;
+}
+.sidebar .investigation-sidebar-nav .nav-indicator {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0;
+}
+.studio-title,
+.studio-actions {
+  flex-wrap: wrap;
+}
+.studio-workspace {
+  grid-template-columns: 220px minmax(316px, 1fr) 330px;
+}
+@media (min-width: 1600px) {
+  .studio-workspace {
+    grid-template-columns: 250px minmax(350px, 1fr) 380px;
+  }
+}
+@media (max-width: 1250px) {
+  .studio-workspace {
+    grid-template-columns: 195px minmax(316px, 1fr) 290px;
+  }
+}
+@media (max-width: 1100px) {
+  .studio-workspace {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+  .context-panel {
+    grid-column: 1/-1;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    grid-template-areas:
+      "title title"
+      "business evidence"
+      "business investigator";
+    grid-template-rows: auto auto 1fr;
+  }
+  .context-panel > .workspace-panel-title {
+    grid-area: title;
+  }
+  .context-panel .connected-evidence {
+    grid-area: evidence;
+    border-left: 1px solid var(--line);
+  }
+  .context-panel .investigator {
+    grid-area: investigator;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+  .context-panel .business-context {
+    grid-area: business;
+    padding: 22px;
+  }
+  .context-panel .business-context dl {
+    font-size: 11px;
+    gap: 15px;
+  }
+  .context-panel .business-context dd {
+    font-size: 10px;
+  }
+  .context-panel .investigator {
+    padding: 22px;
+  }
+  .context-panel {
+    max-height: none;
+    overflow: visible;
+  }
+}
+@media (max-width: 680px) {
+  .studio-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .studio-workspace .context-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "title" "business" "evidence" "investigator";
+    grid-template-rows: auto;
+  }
+  .context-panel .connected-evidence {
+    border-left: 0;
+  }
+  .context-panel .investigator {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+@media (max-width: 360px) {
+  .studio-workspace,
+  .studio-page .context-ribbon {
+    margin-inline: -16px;
+  }
+  .studio-page .replay-stage {
+    padding-inline: 0;
   }
 }
