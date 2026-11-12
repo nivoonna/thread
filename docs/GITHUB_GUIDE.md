@@ -22,7 +22,7 @@ PR titles describe the resulting behavior and start with the feature name. Descr
 | **Check proposed changes**            | An open PR is created or updated against main              | Installs dependencies, runs unit tests, checks TypeScript, builds, runs browser tests and saves evidence | No                        |
 | **Test and publish live Thread site** | Main is updated, or someone explicitly starts a manual run | Runs the same checks, packages the site and publishes to GitHub Pages                                    | Yes, after checks succeed |
 
-Future PR runs use **Check PR #number: title**. Future release runs use **Publish live site #number (main updated)** or **(manual request)**. Job IDs, triggers, permissions, commands and deployment destination are unchanged by this naming update. Existing historical runs may retain their original labels, including **Validate pull request** and **Validate and deploy THREAD**.
+PR runs use **Check PR #number: title**. Release runs use **Publish live site #number (main updated)** or **(manual request)**. Older runs may retain the original workflow labels.
 
 ## Reading the status
 
@@ -45,15 +45,16 @@ The application's **Publish version** button is different: it creates a simulate
 
 ## Builder Studio change history
 
-This is a dated review snapshot from November 11, 2026, not a substitute for checking current PR and Actions status.
+These PRs record the implemented changes. Use [Actions](https://github.com/nivoonna/thread/actions) and the live version metadata to check the current release.
 
-| PR                                              | Change                                                                                                                                         | Status at this update                | Verification                                                                                                                        |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [#1](https://github.com/nivoonna/thread/pull/1) | Add the measurement workspace: discovery, authoring, governance and API reuse                                                                  | Merged; included in the live release | Original implementation: 27 unit / 13 browser tests locally                                                                         |
-| [#2](https://github.com/nivoonna/thread/pull/2) | Query the correct published version; compare against draft ancestry; correct failure labels                                                    | Merged and deployed as `1d0d0ae`     | 30 unit / 17 browser tests; GitHub validation and deployment succeeded; 17 tests also passed against the live site                  |
-| [#3](https://github.com/nivoonna/thread/pull/3) | Separate workspace navigation; protect edited drafts, filter catalog details and repair first-tap help; clarify GitHub names and documentation | Open for review; not deployed        | Prior UX/name changes passed GitHub checks; workspace revision: 33 unit / 27 browser tests locally, with a fresh PR check requested |
-
-Earlier GitHub startup failures are retained in Actions history. They happened before application jobs; subsequent PR #2 validation and deployment succeeded. See each run's own status rather than treating the old failure as the current release status.
+| PR                                              | Change                                                                 |
+| ----------------------------------------------- | ---------------------------------------------------------------------- |
+| [#1](https://github.com/nivoonna/thread/pull/1) | Add discovery, authoring, governance and API reuse                     |
+| [#2](https://github.com/nivoonna/thread/pull/2) | Correct published-version handoffs, draft ancestry and failure labels  |
+| [#3](https://github.com/nivoonna/thread/pull/3) | Separate workspaces; protect drafts and improve catalog and touch help |
+| [#4](https://github.com/nivoonna/thread/pull/4) | Explain Builder Studio on its Overview                                 |
+| [#5](https://github.com/nivoonna/thread/pull/5) | Simplify the demo and preserve measurement context across views        |
+| [#6](https://github.com/nivoonna/thread/pull/6) | Show both workspaces in the left menu                                  |
 
 ## The original implementation commits
 
