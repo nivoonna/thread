@@ -63,5 +63,3 @@ Run `npm test`, `npm run build` (includes TypeScript) and `npm run test:e2e`. Th
 The suite covers the full publish/query/investigate path, genuine validation failure/recovery, exact metric/version handoff, older-version impact and consumer pins, deprecation, draft replacement safety, catalog filtering, accessible form controls and query-cohort consistency. Existing regression coverage protects landing, journey/funnel analysis, comparisons/segments, filters, sessions, replay/autoplay, evidence/brief links and navigation history.
 
 Chromium and emulated touch checks do not constitute a complete cross-browser or screen-reader audit. A passing cloud build does not prove the live release changed: a PR must be reviewed, merged and successfully deployed separately. Builder’s **Publish version** changes only local metric state.
-
-See [the GitHub guide](GITHUB_GUIDE.md) for workflow names, status meanings and the original incremental development history.

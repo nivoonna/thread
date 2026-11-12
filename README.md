@@ -33,15 +33,8 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The build includes TypeScript checking. Browser tests use the production build. No lint task is configured.
+The build includes TypeScript checking. Browser tests use the production build.
 
 ## Demo boundaries
 
 The 1,500 groups and 23 reconstructed sessions are synthetic. GrabFood Group Payments is illustrative. Queries and agent examples run locally; permissions, source quality and approvals are simulated. Builder drafts and publications reset on refresh. No live Grab integration or LLM is connected.
-
-## Documentation
-
-- [Builder Studio walkthrough and architecture](docs/BUILDER_STUDIO.md)
-- [Development and investigation data model](docs/DEVELOPMENT.md)
-- [GitHub checks and release verification](docs/GITHUB_GUIDE.md)
-- [Original investigation validation record](docs/VALIDATION.md)
