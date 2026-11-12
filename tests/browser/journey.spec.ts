@@ -29,9 +29,9 @@ test("filters, comparison, empty replay cohorts, successful session, architectur
     .last()
     .click();
   await expect(
-    page.getByRole("heading", { name: "Follow the thread." }),
+    page.getByRole("heading", { name: "How THREAD works" }),
   ).toBeVisible();
-  await page.getByText("Semantic layer", { exact: true }).click();
+  await page.getByText("Metric definitions", { exact: true }).click();
   await expect(page.getByText(/Completion = distinct confirmed/)).toBeVisible();
   await page.keyboard.press("Escape");
   await page

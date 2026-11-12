@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Info,
   ArrowUpRight,
-  Command,
   Link2,
   Database,
   SlidersHorizontal,
@@ -353,36 +352,10 @@ export default function App() {
             ))}
           </nav>
         )}
-        <div className="sidebar-connection" hidden={route.page === "builder"}>
-          <div className="thread-illustration" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <span />
-            <span />
-            <span />
-          </div>
-          <h3>
-            The whole story,
-            <br />
-            connected.
-          </h3>
-          <p>
-            From what people experience
-            <br />
-            to what actually happens.
-          </p>
+        <div className="sidebar-help">
           <button onClick={() => setArchitecture(true)}>
-            How THREAD works <ArrowUpRight size={13} />
+            How THREAD works <ArrowUpRight size={13} aria-hidden="true" />
           </button>
-        </div>
-        <div className="sidebar-footer">
-          <span className="avatar">PM</span>
-          <div>
-            <strong>Your workspace</strong>
-            <small>Explore the demo</small>
-          </div>
-          <Command size={15} />
         </div>
       </aside>
       <div className="app-content">
