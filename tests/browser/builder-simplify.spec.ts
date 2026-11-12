@@ -168,8 +168,9 @@ test("query-to-investigate maps the exact cohort and retains actual replay conte
     "#page=studio&size=large&payment=split&outcome=completed&period=recent&session=S-1042-0&event=0&moment=1792672200000&record=&origin=&stage=6&compare=false&cohortA=large-split&cohortB=small-split&mode=reached";
   await page.goto("./" + original);
   await page
-    .getByRole("combobox", { name: "Workspace", exact: true })
-    .selectOption("builder");
+    .getByRole("navigation", { name: "Workspaces", exact: true })
+    .getByRole("button", { name: "Builder Studio", exact: true })
+    .click();
   await nav(page, "API Playground").click();
   await page
     .getByRole("combobox", { name: "Creation cohort (UTC)", exact: true })

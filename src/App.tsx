@@ -1,8 +1,8 @@
 import { investigationFilters } from "./builder/investigation";
 import {
-  WorkspaceSwitcher,
+  WorkspaceNavigation,
   type Workspace,
-} from "./components/WorkspaceSwitcher";
+} from "./components/WorkspaceNavigation";
 import { Builder, views, builderLabels, type View } from "./builder/Builder";
 import { useState, useEffect } from "react";
 import {
@@ -294,12 +294,12 @@ export default function App() {
             <strong>
               Gather <span className="workspace-badge">DEMO</span>
             </strong>
-            <WorkspaceSwitcher
-              value={inBuilder ? "builder" : "investigate"}
-              onChange={switchWorkspace}
-            />
           </div>
         </div>
+        <WorkspaceNavigation
+          value={inBuilder ? "builder" : "investigate"}
+          onChange={switchWorkspace}
+        />
         <div className="nav-label">
           {inBuilder ? "BUILDER STUDIO" : "INVESTIGATE"}
         </div>
@@ -414,13 +414,6 @@ export default function App() {
             <span className="header-avatar">PM</span>
           </div>
         </header>
-        <div className="workspace-picker-mobile">
-          <span>Gather</span>
-          <WorkspaceSwitcher
-            value={inBuilder ? "builder" : "investigate"}
-            onChange={switchWorkspace}
-          />
-        </div>
         <main id="main-content" tabIndex={-1}>
           <div hidden={route.page !== "builder"}>
             <Builder

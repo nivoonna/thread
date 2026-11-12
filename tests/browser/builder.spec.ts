@@ -10,8 +10,9 @@ test("golden measurement journey recovers validation, publishes, queries and pre
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("./" + original);
   await page
-    .getByRole("combobox", { name: "Workspace", exact: true })
-    .selectOption("builder");
+    .getByRole("navigation", { name: "Workspaces", exact: true })
+    .getByRole("button", { name: "Builder Studio", exact: true })
+    .click();
   await page.getByRole("button", { name: "Find Group Orders data" }).click();
   await page.getByLabel("Search assets").fill("group_orders");
   await page.getByRole("button", { name: "group_orders", exact: true }).click();
@@ -95,8 +96,9 @@ test("golden measurement journey recovers validation, publishes, queries and pre
         new URLSearchParams(new URL(page.url()).hash.slice(1)).get(k),
       ).toBe(v);
   await page
-    .getByRole("combobox", { name: "Workspace", exact: true })
-    .selectOption("builder");
+    .getByRole("navigation", { name: "Workspaces", exact: true })
+    .getByRole("button", { name: "Builder Studio", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "API Playground", exact: true })
     .click();
