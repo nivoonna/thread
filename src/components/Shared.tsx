@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, ArrowRight, Check, Layers, MousePointer2 } from "lucide-react";
+import { X, Layers } from "lucide-react";
 import { useRef, type ReactNode } from "react";
 export function Modal({
   open,
@@ -101,105 +101,70 @@ export function Architecture({
     <Modal
       open={open}
       onClose={onClose}
-      title="Follow the thread."
-      description="From a design decision to a grounded investigation."
+      title="How THREAD works"
+      description="Define consistent metrics, examine customer journeys and decide what to validate next."
+      className="how-thread"
       wide
     >
-      <div className="architecture-intro">
-        A replay shows the experience.
-        <br />
-        <span>Connected records explain the outcome.</span>
-      </div>
-      <p className="architecture-context">
-        A proposed internal capability for Grab: join clickstream and
-        transaction records in the existing data lake, then reconstruct each
-        person’s experience with design-system components. Gather is the
-        fictional example used here; its screens and linked records are authored
-        synthetic fixtures. No Grab integration, capture SDK, live LLM or
-        production security implementation is deployed.
-      </p>
-      <div className="architecture-flow">
-        {[
-          "Product design",
-          "Built-in instrumentation",
-          "Interaction + business events",
-          "Trusted definitions",
-          "Journey analytics",
-          "Evidence Investigator",
-        ].map((s, i) => (
-          <div key={s}>
-            <span className="step-number">0{i + 1}</span>
-            <strong>{s}</strong>
-            {i < 5 && <ArrowRight size={16} />}
-          </div>
-        ))}
-      </div>
-      <div className="architecture-grid">
-        <div>
-          {[
-            [
-              "SDK & instrumentation",
-              "Components emit meaningful interactions with session, participant, group and request IDs. Backend events independently record acceptance or failure. This demo reconstructs states; it does not capture real users.",
-            ],
-            [
-              "Production governance (proposed)",
-              "Reuse governed interaction and transaction sources. Apply internal access controls, masking, retention and auditability. Versioned components and state would support faithful reconstruction; these production controls and integrations are not implemented in this demo.",
-            ],
-            [
-              "Data Mesh",
-              "The marketplace team owns Group Orders; payments owns authorization outcomes. Stable identifiers let these data products serve a shared investigation without erasing their ownership.",
-            ],
-            [
-              "Medallion architecture",
-              "Raw events retain original timestamps. A cleaned layer deduplicates and joins identities; curated group-level records power the funnel. These are conceptual boundaries, not deployed data pipelines.",
-            ],
-            [
-              "Semantic layer",
-              "Completion = distinct confirmed Group Orders ÷ distinct groups created in the selected creation cohort. Steps are ordered and counted once per group. Recent means October 15–28; previous means October 1–14, 2026. All sample groups have reached a terminal state.",
-            ],
-          ].map(([title, text]) => (
-            <details key={title}>
-              <summary>{title}</summary>
-              <p>{text}</p>
-            </details>
-          ))}
+      <div className="how-thread-content">
+        <div className="how-thread-workspaces">
+          <section>
+            <h3>Builder Studio</h3>
+            <p>
+              Discover an existing source or metric, preview its calculation,
+              validate the definition and publish a version. Dashboards,
+              applications and AI consumers can reuse that published definition;
+              existing consumers stay pinned to their version.
+            </p>
+          </section>
+          <section>
+            <h3>Investigation Studio</h3>
+            <p>
+              Compare cohorts and conversion in Journey Analysis. Align
+              reconstructed participant screens with payment and order records
+              in Session Analysis. Create a brief that separates observations,
+              hypotheses, missing evidence and next checks.
+            </p>
+          </section>
         </div>
-        <div className="instrumentation">
-          <div className="eyebrow">MEASUREMENT STARTS WITH DESIGN</div>
-          <div className="sample-cart">
-            <span>Roasted sesame bowl</span>
-            <span className="sample-button">
-              Add to cart <MousePointer2 size={14} />
-            </span>
-          </div>
-          <dl>
-            <dt>Interaction</dt>
-            <dd>cart.add_tapped</dd>
-            <dt>Application action</dt>
-            <dd>POST /cart/items</dd>
-            <dt>Identifiers</dt>
-            <dd>
-              session_id · participant_id
-              <br />
-              group_id · request_id
-            </dd>
-            <dt>Funnel step</dt>
-            <dd>Items added</dd>
-            <dt>Business outcome</dt>
-            <dd>
-              <Check size={12} /> cart.item_added
-            </dd>
-          </dl>
+        <section className="how-thread-bridge">
+          <h3>Follow the same cohort</h3>
           <p>
-            A tap captures intent. A successful response confirms the cart
-            changed.
+            Query Group Order Completion Rate by period and payment mode, then
+            choose <strong>Investigate this cohort</strong> to open the matching
+            Journey Analysis filters. Curated sessions provide examples of what
+            people experienced; they do not establish what caused the cohort’s
+            outcome.
           </p>
-        </div>
-      </div>
-      <div className="disclosure">
-        <span className="status-dot" /> Independent concept · fictional
-        marketplace · synthetic data · deterministic demo investigation engine.
-        No live LLM, capture SDK, or customer data.
+        </section>
+        <details>
+          <summary>Metric definitions</summary>
+          <p>
+            Completion = distinct confirmed Group Orders ÷ distinct eligible
+            groups started × 100. Confirmation requires an independent order
+            record; each eligible group counts once. Preview and published
+            queries share one calculation service. Published definitions are
+            immutable and consumers pin explicit versions.
+          </p>
+        </details>
+        <details>
+          <summary>Platform foundations</summary>
+          <p>
+            The concept could build on existing catalog, quality, identity and
+            metric services. Producers own source contracts; builders maintain
+            definitions; consumers reuse published versions. Production
+            integration would need correlated interaction and business records,
+            governed access, masking, retention and auditability.
+          </p>
+        </details>
+        <p className="how-thread-scope">
+          <strong>Demo scope.</strong> Gather and its reconstructed sessions are
+          synthetic; GrabFood is illustrative. Queries and structured AI
+          evidence run locally. Source quality, permissions and approvals are
+          simulated; drafts and metric versions reset on refresh. No Grab
+          integration, capture SDK, live LLM or production access control is
+          connected.
+        </p>
       </div>
     </Modal>
   );
