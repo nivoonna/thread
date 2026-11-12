@@ -1,35 +1,30 @@
 # THREAD
 
-_Journey intelligence for better product decisions_
+THREAD is an interactive product prototype connecting customer journey evidence with trusted, reusable measurement. It uses Gather, a fictional food-delivery marketplace.
 
-**What it is**
+[Explore the live demo](https://nivoonna.github.io/thread/) · [Open Builder Studio](https://nivoonna.github.io/thread/#page=builder&builderView=overview)
 
-THREAD is an interactive product concept that helps product teams turn customer-journey evidence into better decisions. It connects behavior, session replays, and business outcomes in Gather, a fictional food-delivery marketplace.
+## Explore
 
-**The idea**
+Choose a workspace from the left menu:
 
-A replay shows what someone experienced. THREAD connects that experience to what happened in the business. Several participants can share one order; a checkout tap is not a confirmed transaction.
+- **Investigate:** follow the GO-1042 group journey across participants, connect reconstructed screens with payment and order records, compare cohorts and create a decision brief with supporting evidence.
+- **Builder Studio:** discover existing data and metrics, preview calculations, validate definitions, publish immutable versions and query them for reuse across dashboards, apps and AI agents.
 
-**The outcome**
+Builder's demo flow is **discover → define → preview → validate → publish → query → investigate**. The [walkthrough](docs/BUILDER_STUDIO.md) covers the exact steps, validation recovery and pinned consumers.
 
-Help product managers decide where to focus, which problems to prioritize, and what to validate next. Every investigation separates observations from hypotheses and uncertainty, supporting decisions grounded in evidence without treating correlation as proof.
+## Run locally
 
-**What to explore**
-
-- Play the GO-1042 customer journey across all participants on one timeline.
-- Connect customer screens to payment and order records.
-- Explore comparable journeys and copy a decision brief with evidence and validation priorities.
-
-**Built with**
-
-React · TypeScript · Vite · Tailwind CSS · Radix UI · Recharts · Lucide
-
-**Run locally**
+Built with React, TypeScript and Vite. Use **Node.js 24**.
 
 ```sh
 npm ci
 npm run dev
 ```
+
+Open [localhost:5173/thread/](http://localhost:5173/thread/).
+
+## Checks
 
 ```sh
 npm test
@@ -38,26 +33,15 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-**Demo**
+The build includes TypeScript checking. Browser tests use the production build. No lint task is configured.
 
-[Explore the live demo](https://nivoonna.github.io/thread/)
+## Demo boundaries
 
-All 1,500 groups are synthetic and reproducible. Twenty-three sessions cover every member of five curated orders using authored UI reconstruction. The investigator runs local analysis, not a live LLM.
+The 1,500 groups and 23 reconstructed sessions are synthetic. GrabFood Group Payments is illustrative. Queries and agent examples run locally; permissions, source quality and approvals are simulated. Builder drafts and publications reset on refresh. No live Grab integration or LLM is connected.
 
-**Builder Studio**
+## Documentation
 
-Use **Investigate** or **Builder Studio** in the left-side menu to choose a workspace. Switching opens that workspace’s landing page and shows only its own sidebar. In Builder Studio, discover data products, author a governed metric, recover a real schema validation failure, publish an immutable version and query it locally. Existing `page=studio` links still open Investigation Studio; Builder uses `#page=builder&builderView=overview` under the same `/thread/` base.
-
-Demo: **Data Catalog → group_orders → Create new version → Continue twice → Calculate preview → Validate draft → Run validation → Publish version → Query published metric → Run Query → Investigate this cohort**. Reuse the certified v1 directly, or publish a revision as v2; consumer pins stay unchanged. To demonstrate recovery, open **Demo checks** in Validation, select **Test legacy field reference**, validate, correct with **Use completed field**, and rerun validation before publishing.
-
-Builder adds no credentials, network service or dependency. It maps Gather's existing deterministic group/order/payment fixtures; GrabFood Group Payments v2 is illustrative framing, not a deployed integration. Drafts and publications last for the app session; refreshing starts a clean demo. Payment mode, release and period are supported dimensions; market and platform are unavailable. Source quality, approval and permissions are explicitly simulated.
-
-The existing commands above run the combined unit and browser suites. `npm run build` includes TypeScript checking; there is no lint script. Pull-request CI validates without deploying. See [Builder Studio: demo and technical guide](docs/BUILDER_STUDIO.md).
-
-**GitHub and releases**
-
-- **Check proposed changes** runs tests and builds an open pull request. It does not publish the site.
-- **Test and publish live Thread site** tests main and publishes it to the [existing Thread link](https://nivoonna.github.io/thread/).
-- A merged PR puts code on main. A successful deployment publishes it. An older red run is a historical failed attempt, not the status of the latest release.
-
-See [GitHub guide: pull requests, checks and live releases](docs/GITHUB_GUIDE.md) for naming, statuses, release verification and the Builder Studio change history.
+- [Builder Studio walkthrough and architecture](docs/BUILDER_STUDIO.md)
+- [Development and investigation data model](docs/DEVELOPMENT.md)
+- [GitHub checks and release verification](docs/GITHUB_GUIDE.md)
+- [Original investigation validation record](docs/VALIDATION.md)

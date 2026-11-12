@@ -6,7 +6,7 @@ Use Node 24 (`.nvmrc`). The Vite base is `/thread/`; routes live in the URL hash
 
 All 13 supplied references were inspected locally. They informed compact filters, persistent analytical context, session tables, categorized event timelines, event-to-replay synchronization, and business-event drill-down. No dedicated segmentation screen or full funnel screenshot was supplied. THREAD uses its own layout, typography, colors and assets.
 
-The interface follows an 8-point spacing rhythm, Inter typography, neutral surfaces, restrained green selections and amber outcomes. `src/styles.css` defines shared tokens and responsive panel layouts. Radix provides focus-managed dialogs; native controls and labelled buttons cover other interactions. The product deliberately has three primary destinations.
+The interface follows an 8-point spacing rhythm, Inter typography, neutral surfaces, restrained green selections and amber outcomes. `src/styles.css` defines shared tokens and responsive panel layouts. Radix provides focus-managed dialogs; native controls and labelled buttons cover other interactions. Investigate has three destinations: Overview, Journey Analysis and Investigation Studio. Builder Studio provides a separate five-view measurement workspace; both are available from the left menu.
 
 ## Data contract
 
@@ -20,7 +20,7 @@ Session → participant → group → order → payment records are independentl
 
 `npm test` checks referential integrity, reproducibility, disjoint cohort partitions, funnel conservation, replay/payment consistency, filter-sensitive findings and evidence membership. `npm run test:e2e` launches the production build with Playwright and exercises the central investigation and narrow layout. Locally it uses `/usr/bin/chromium` when available; otherwise install Playwright Chromium. Screenshots are generated under ignored `test-results/`.
 
-The Pages workflow validates, builds, runs browser checks, and uploads `dist`. In GitHub repository Settings → Pages, set Source to **GitHub Actions**. Push to `main` or dispatch **Validate and deploy THREAD**. Verify the successful deployment commit matches the tested commit and open the published URL before claiming it is live. The Vite build emits `version.json` with the build commit for this check.
+The Pages workflow validates, builds, runs browser checks, and uploads `dist`. In GitHub repository Settings → Pages, set Source to **GitHub Actions**. Push to `main` or dispatch **Test and publish live Thread site**. Verify the successful deployment commit matches the tested commit and open the published URL before claiming it is live. The Vite build emits `version.json` with the build commit for this check.
 
 ## Shared journey time
 
