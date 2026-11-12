@@ -105,7 +105,6 @@ export function Studio({
     [copied, setCopied] = useState(false),
     [linkCopied, setLinkCopied] = useState(false),
     [kind, setKind] = useState("all");
-  const workspaceRef = useRef<HTMLDivElement>(null);
   const replayRef = useRef<HTMLElement>(null);
   const [tourIndex, setTourIndex] = useState(-1);
   const [tourPlaying, setTourPlaying] = useState(false);
@@ -129,11 +128,16 @@ export function Studio({
   const startTour = () => {
     focusTour(0);
     setTourPlaying(true);
-    (window.innerWidth > 900
-      ? workspaceRef.current
-      : replayRef.current
-    )?.scrollIntoView({ block: "start", behavior: "instant" });
   };
+  useEffect(() => {
+    if (!tourPlaying || !active) return;
+    // Focus the replay at its normal size when starting or resuming playback.
+    const phone = replayRef.current?.querySelector<HTMLElement>(".phone");
+    (phone || replayRef.current)?.scrollIntoView({
+      block: "nearest",
+      behavior: "instant",
+    });
+  }, [tourPlaying, active]);
   const manualSession = (id: string, event = 0, at?: number) => {
     stopTour();
     setPlaying(false);
@@ -289,8 +293,8 @@ export function Studio({
     )
     .at(-1)?.event;
   return (
-    <div className="studio-page">
-      <div className="studio-title">
+    <div className="page studio-page">
+      <div className="page-title studio-title">
         <div>
           <button className="back-link" onClick={onJourney}>
             <ArrowLeft size={13} />
@@ -334,7 +338,7 @@ export function Studio({
           parent investigation
         </span>
       </div>
-      <div className="studio-workspace" ref={workspaceRef}>
+      <div className="studio-workspace">
         <aside className="timeline-panel">
           <div className="workspace-panel-title">
             <span>Journey timeline</span>
