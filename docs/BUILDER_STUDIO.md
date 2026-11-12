@@ -4,7 +4,7 @@ Builder Studio extends Thread with a local governed measurement workflow: discov
 
 ## Walkthrough (approximately three minutes)
 
-Start a fresh session at `/thread/#page=builder&builderView=overview`. No credentials or services are needed. Use **Investigate** or **Builder Studio** in the left-side menu to switch workspaces.
+Start a fresh session at `/thread/#page=builder&builderView=overview`. No credentials or services are needed. Use **Investigation Studio** or **Builder Studio** in the left-side menu to switch workspaces.
 
 1. **Find Group Orders data** opens Data Catalog. Inspect `group_orders`; ownership, schema and lineage are available on demand. **Use existing metric** reuses the certified contract immediately.
 2. For the authoring path, choose **Create new version**. Keep or edit the definition and ownership. Continue to source/calculation, choose a UTC creation cohort, and continue to dimensions/preview. **Calculate preview** uses the shared fixture service: the recent cohort is 468 confirmed / 755 eligible groups (61.99%). All October is 1,021 / 1,500 (68.07%).
@@ -27,9 +27,9 @@ The approximately three-minute duration is a walkthrough target, not a measured 
 
 ## Workspace and route compatibility
 
-Investigate retains its Overview, Journey Analysis and Investigation Studio. Builder has its own five-item sidebar and landing page. The brand link returns to the active workspace’s Overview; both workspaces stay available in the sidebar, using labelled icons in compact layouts.
+Investigation Studio contains Overview, Journey Analysis and Session Analysis. Builder has its own five-item sidebar and landing page. The brand link returns to the active workspace’s Overview; both workspaces stay available in the sidebar, using labelled icons in compact layouts.
 
-Existing `page=studio` links still mean Investigation Studio. Builder uses `page=builder&builderView=overview|catalog|metric|validation|api`, under the existing `/thread/` base. Workspace switching preserves draft and investigation context. Refresh and browser history reconstruct workspace navigation from the URL; refresh resets in-memory demo publications.
+Existing `page=studio` links continue to open Session Analysis. Builder uses `page=builder&builderView=overview|catalog|metric|validation|api`, under the existing `/thread/` base. Workspace switching preserves draft and investigation context. Refresh and browser history reconstruct workspace navigation from the URL; refresh resets in-memory demo publications.
 
 Only the explicit **Investigate this cohort** handoff updates investigation filters to match the query. It preserves selected session, event, moment and other route context. It makes no session-level attribution claim.
 

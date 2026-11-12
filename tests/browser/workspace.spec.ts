@@ -19,7 +19,7 @@ test("visible workspace menu isolates navigation and opens the correct landing p
     exact: true,
   });
   const investigate = workspaces.getByRole("button", {
-    name: "Investigate",
+    name: "Investigation Studio",
     exact: true,
   });
   const builder = workspaces.getByRole("button", {
@@ -47,7 +47,7 @@ test("visible workspace menu isolates navigation and opens the correct landing p
     page.getByRole("button", { name: "Journey Analysis", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Investigation Studio", exact: true }),
+    page.getByRole("button", { name: "Session Analysis", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
@@ -87,12 +87,22 @@ test("workspace switching preserves deep-link context, keyboard access, refresh 
   page,
 }) => {
   await page.goto("./" + original);
+  await expect(
+    page.getByRole("heading", { name: "Session Analysis.", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".breadcrumb strong")).toHaveText(
+    "Session Analysis",
+  );
+  await page.screenshot({
+    path: "test-results/navigation-session-analysis.png",
+    fullPage: true,
+  });
   const workspaces = page.getByRole("navigation", {
     name: "Workspaces",
     exact: true,
   });
   const investigate = workspaces.getByRole("button", {
-    name: "Investigate",
+    name: "Investigation Studio",
     exact: true,
   });
   const builder = workspaces.getByRole("button", {
@@ -128,7 +138,7 @@ test("workspace switching preserves deep-link context, keyboard access, refresh 
   await expect(investigate).toHaveAttribute("aria-pressed", "true");
   await expect(builder).toHaveAttribute("aria-pressed", "false");
   await expect(
-    page.getByRole("button", { name: "Investigation Studio", exact: true }),
+    page.getByRole("button", { name: "Session Analysis", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await page.goForward();
   await expect(builder).toHaveAttribute("aria-pressed", "true");
@@ -144,7 +154,7 @@ test("workspace landing changes retain the active draft and explicit investigati
     exact: true,
   });
   const investigate = workspaces.getByRole("button", {
-    name: "Investigate",
+    name: "Investigation Studio",
     exact: true,
   });
   const builder = workspaces.getByRole("button", {
@@ -202,7 +212,7 @@ for (const width of [820, 390])
       exact: true,
     });
     const investigate = workspaces.getByRole("button", {
-      name: "Investigate",
+      name: "Investigation Studio",
       exact: true,
     });
     const builder = workspaces.getByRole("button", {

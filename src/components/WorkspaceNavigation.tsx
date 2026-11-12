@@ -11,7 +11,7 @@ export function WorkspaceNavigation({
     <nav className="workspace-navigation" aria-label="Workspaces">
       {(
         [
-          { id: "investigate", label: "Investigate", Icon: Search },
+          { id: "investigate", label: "Investigation Studio", Icon: Search },
           { id: "builder", label: "Builder Studio", Icon: Blocks },
         ] as const
       ).map(({ id, label, Icon }) => (

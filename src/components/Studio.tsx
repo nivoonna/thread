@@ -297,7 +297,7 @@ export function Studio({
             Explore comparable journeys
           </button>
           <h1>
-            Investigation Studio<span className="title-dot">.</span>
+            Session Analysis<span className="title-dot">.</span>
           </h1>
         </div>
         <div className="studio-actions">
@@ -935,7 +935,9 @@ export function Studio({
           />
         </details>
         <div className="modal-footer">
-          <span>Synthetic data · Copy includes all sections and evidence links.</span>
+          <span>
+            Synthetic data · Copy includes all sections and evidence links.
+          </span>
           <button className="button primary" onClick={copy}>
             {copied ? <Check size={15} /> : <Copy size={15} />}{" "}
             {copied ? "Copied to clipboard" : "Copy brief"}

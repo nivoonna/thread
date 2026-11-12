@@ -44,7 +44,7 @@ test("filters, comparison, empty replay cohorts, successful session, architectur
     page.getByRole("heading", { name: "No detailed replay in this selection" }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Investigation Studio", exact: true })
+    .getByRole("button", { name: "Session Analysis", exact: true })
     .click();
   await expect(
     page.getByRole("heading", {

@@ -6,7 +6,7 @@ Use Node 24 (`.nvmrc`). The Vite base is `/thread/`; routes live in the URL hash
 
 All 13 supplied references were inspected locally. They informed compact filters, persistent analytical context, session tables, categorized event timelines, event-to-replay synchronization, and business-event drill-down. No dedicated segmentation screen or full funnel screenshot was supplied. THREAD uses its own layout, typography, colors and assets.
 
-The interface follows an 8-point spacing rhythm, Inter typography, neutral surfaces, restrained green selections and amber outcomes. `src/styles.css` defines shared tokens and responsive panel layouts. Radix provides focus-managed dialogs; native controls and labelled buttons cover other interactions. Investigate has three destinations: Overview, Journey Analysis and Investigation Studio. Builder Studio provides a separate five-view measurement workspace; both are available from the left menu.
+The interface follows an 8-point spacing rhythm, Inter typography, neutral surfaces, restrained green selections and amber outcomes. `src/styles.css` defines shared tokens and responsive panel layouts. Radix provides focus-managed dialogs; native controls and labelled buttons cover other interactions. Investigation Studio has three destinations: Overview, Journey Analysis and Session Analysis. Builder Studio provides a separate five-view measurement workspace; both are available from the left menu.
 
 ## Data contract
 
