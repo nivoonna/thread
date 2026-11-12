@@ -250,7 +250,7 @@ export default function App() {
   const titles = {
     overview: "Product overview",
     journey: "Journey analysis",
-    studio: "Investigation studio",
+    studio: "Session Analysis",
     builder: "Builder Studio",
   };
   return (
@@ -301,7 +301,7 @@ export default function App() {
           onChange={switchWorkspace}
         />
         <div className="nav-label">
-          {inBuilder ? "BUILDER STUDIO" : "INVESTIGATE"}
+          {inBuilder ? "BUILDER STUDIO" : "INVESTIGATION STUDIO"}
         </div>
         {inBuilder ? (
           <nav aria-label="Builder navigation" className="builder-sidebar-nav">
@@ -333,7 +333,7 @@ export default function App() {
                 { page: "journey", label: "Journey Analysis", Icon: Route },
                 {
                   page: "studio",
-                  label: "Investigation Studio",
+                  label: "Session Analysis",
                   Icon: ScanLine,
                 },
               ] as const

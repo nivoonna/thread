@@ -8,7 +8,7 @@ THREAD is an interactive product prototype connecting customer journey evidence 
 
 Choose a workspace from the left menu:
 
-- **Investigate:** follow the GO-1042 group journey across participants, connect reconstructed screens with payment and order records, compare cohorts and create a decision brief with supporting evidence.
+- **Investigation Studio:** follow the GO-1042 group journey across participants, connect reconstructed screens with payment and order records, compare cohorts and create a decision brief with supporting evidence.
 - **Builder Studio:** discover existing data and metrics, preview calculations, validate definitions, publish immutable versions and query them for reuse across dashboards, apps and AI agents.
 
 Builder's demo flow is **discover → define → preview → validate → publish → query → investigate**. The [walkthrough](docs/BUILDER_STUDIO.md) covers the exact steps, validation recovery and pinned consumers.
